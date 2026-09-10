@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#08517d">
+<meta name="robots" content="noindex">
+<meta name="description" content="شاركنا رأيك: شكر، اقتراح، أو شكوى — مستشفى الأمل">
+<title>آراء المرضى | مستشفى الأمل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Cairo:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   مستشفى الأمل — نموذج آراء المرضى
+   مبني على الهاتف أولاً (mobile-first)، ويتوسّع إلى عمودين على الشاشات الكبيرة.
+   ========================================================= */
+
+:root{
+  --navy:#08517d;
+  --navy-deep:#063a5b;
+  --sky:#169fd9;
+  --sky-soft:#e7f4fb;
+  --paper:#f7fafc;
+  --ink:#123047;
+  --ink-soft:#6a8398;
+  --line:#e3ecf2;
+  --field:#eef4f8;
+  --thanks:#159f8a;
+  --suggest:#169fd9;
+  --complaint:#e0794a;
+  --danger:#d64545;
+
+  --radius-lg:28px;
+  --radius-md:18px;
+  --radius-sm:13px;
+  --ease:cubic-bezier(.4,.1,.2,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html{-webkit-text-size-adjust:100%}
+
+body{
+  font-family:'IBM Plex Sans Arabic',system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.6;
+  min-height:100dvh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- الهيكل ---------- */
+.stage{min-height:100dvh;display:flex}
+
+.device{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  background:var(--paper);
+  min-height:100dvh;
+  width:100%;
+}
+
+/* ---------- الترويسة ---------- */
+.head{
+  position:relative;
+  background:linear-gradient(158deg,var(--sky) -10%,var(--navy) 55%,var(--navy-deep) 100%);
+  color:#fff;
+  text-align:center;
+  padding:calc(38px + env(safe-area-inset-top)) 26px 58px;
+  overflow:hidden;
+}
+.head .glow{
+  position:absolute;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);
+  top:-70px;left:-40px;pointer-events:none;
+}
+.head-top{position:relative;z-index:2}
+
+.logo{display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.logo .wm{display:block;text-align:center;line-height:1.15}
+.logo .wm .ar{display:block;font-family:'Cairo',sans-serif;font-weight:800;font-size:21px;letter-spacing:-.5px}
+.logo .wm .en{display:block;font-size:11px;letter-spacing:.16em;color:#bfe4f7;font-weight:500}
+
+.head h1{font-family:'Cairo',sans-serif;font-size:23px;font-weight:700;line-height:1.3}
+.head .tag{
+  margin-top:7px;font-size:12.5px;color:#cfeafa;
+  display:inline-flex;align-items:center;gap:7px;
+}
+.head .tag::before,.head .tag::after{content:"";width:16px;height:1px;background:rgba(255,255,255,.4)}
+.head .lede{margin-top:14px;font-size:13px;color:#dcf0fb;max-width:290px;margin-inline:auto}
+
+/* ضمانات — للشاشات الكبيرة فقط */
+.assurances{display:none}
+
+/* القوس الذي يوصل الترويسة بالورقة */
+.arch{
+  position:absolute;bottom:-1px;left:0;right:0;height:34px;
+  background:var(--paper);border-radius:50% 50% 0 0/100% 100% 0 0;
+}
+
+/* ---------- الورقة ---------- */
+.sheet{
+  flex:1;
+  padding:6px 22px calc(30px + env(safe-area-inset-bottom));
+  background:var(--paper);
+}
+
+.kicker{
+  font-size:12px;font-weight:600;color:var(--ink-soft);
+  margin:22px 4px 12px;display:flex;align-items:center;gap:8px;
+}
+.kicker::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ---------- بطاقات نوع الرسالة ---------- */
+.types{display:flex;flex-direction:column;gap:10px}
+.type{
+  cursor:pointer;position:relative;display:flex;align-items:center;gap:14px;
+  border:1.5px solid var(--line);border-radius:var(--radius-md);
+  padding:15px 16px;background:#fff;transition:.18s var(--ease);
+}
+.type input{position:absolute;opacity:0;pointer-events:none}
+.type .ic{
+  width:42px;height:42px;border-radius:var(--radius-sm);flex:none;
+  display:grid;place-items:center;font-size:20px;background:var(--field);transition:.18s var(--ease);
+}
+.type .txt{display:block}
+.type .txt strong{display:block;font-size:15.5px;font-weight:600}
+.type .txt small{display:block;font-size:12px;color:var(--ink-soft);line-height:1.4}
+.type .tick{
+  margin-inline-start:auto;width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--line);flex:none;display:grid;place-items:center;
+  color:#fff;font-size:12px;transition:.18s var(--ease);
+}
+.type:hover{transform:translateX(-3px)}
+.type:has(input:focus-visible){outline:2px solid var(--sky);outline-offset:3px}
+
+.type.thanks:has(:checked){border-color:var(--thanks);background:#e9f7f4}
+.type.thanks:has(:checked) .ic{background:var(--thanks);color:#fff}
+.type.thanks:has(:checked) .tick{background:var(--thanks);border-color:var(--thanks)}
+.type.suggest:has(:checked){border-color:var(--sky);background:var(--sky-soft)}
+.type.suggest:has(:checked) .ic{background:var(--sky);color:#fff}
+.type.suggest:has(:checked) .tick{background:var(--sky);border-color:var(--sky)}
+.type.complaint:has(:checked){border-color:var(--complaint);background:#fcf0e9}
+.type.complaint:has(:checked) .ic{background:var(--complaint);color:#fff}
+.type.complaint:has(:checked) .tick{background:var(--complaint);border-color:var(--complaint)}
+
+/* ---------- الحقول ---------- */
+.field{margin-bottom:16px}
+.row{display:flex;gap:12px}
+.row .field{flex:1;min-width:0}
+
+label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+label .req{color:var(--complaint)}
+
+.inp{
+  width:100%;font-family:inherit;font-size:14.5px;color:var(--ink);
+  background:var(--field);border:1.5px solid transparent;border-radius:var(--radius-sm);
+  padding:13px 14px;transition:.18s var(--ease);
+}
+.inp::placeholder{color:#9fb3c2}
+.inp:focus{outline:none;background:#fff;border-color:var(--sky);box-shadow:0 0 0 4px rgba(22,159,217,.14)}
+.inp:disabled{opacity:.6;cursor:not-allowed}
+
+textarea.inp{resize:none;min-height:104px;line-height:1.7}
+
+select.inp{
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%236a8398' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 15px center;padding-left:36px;
+}
+input[type="date"].inp{min-height:48px}
+input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.55}
+
+.phone-row{display:flex;gap:10px}
+.phone-row .code{width:76px;text-align:center;font-weight:600;color:var(--ink-soft);flex:none;cursor:default}
+
+/* حالة الخطأ */
+.inp.invalid{border-color:var(--danger);background:#fdf1f1}
+.inp.invalid:focus{box-shadow:0 0 0 4px rgba(214,69,69,.14)}
+.err{font-size:11.5px;color:var(--danger);margin-top:6px;min-height:0}
+.err:empty{display:none}
+
+.under{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.counter{font-size:11px;color:var(--ink-soft);margin-top:6px;margin-inline-start:auto;flex:none}
+
+.form-error{
+  background:#fdf1f1;border:1px solid #f5d4d4;color:#a83232;
+  border-radius:var(--radius-sm);padding:11px 14px;font-size:13px;margin-bottom:14px;
+}
+
+/* ---------- الزر ---------- */
+.submit{
+  width:100%;margin-top:6px;position:relative;
+  background:linear-gradient(135deg,var(--sky),var(--navy));
+  color:#fff;border:none;border-radius:16px;padding:16px;
+  font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;
+  transition:.2s var(--ease);
+  box-shadow:0 14px 26px -12px rgba(8,81,125,.75);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.submit:hover:not(:disabled){transform:translateY(-2px)}
+.submit:active:not(:disabled){transform:translateY(0)}
+.submit:disabled{opacity:.75;cursor:progress}
+.submit .spinner{
+  display:none;width:17px;height:17px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+  animation:spin .7s linear infinite;
+}
+.submit.loading .spinner{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.foot{
+  margin-top:16px;text-align:center;font-size:11.5px;color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+
+/* ---------- شاشة النجاح ---------- */
+.done{
+  text-align:center;padding:34px 6px 24px;
+  animation:rise .4s var(--ease);
+}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.done-ring{
+  width:82px;height:82px;margin:0 auto 20px;border-radius:50%;
+  background:linear-gradient(135deg,#25c2a8,var(--thanks));
+  display:grid;place-items:center;color:#fff;font-size:38px;font-weight:700;
+  box-shadow:0 16px 32px -14px rgba(21,159,138,.8);
+}
+.done h2{font-family:'Cairo',sans-serif;font-size:21px;margin-bottom:8px}
+.done > p{font-size:13.5px;color:var(--ink-soft);max-width:330px;margin:0 auto 22px}
+
+.ref-card{
+  background:#fff;border:1.5px dashed var(--line);border-radius:var(--radius-md);
+  padding:18px;margin-bottom:20px;
+}
+.ref-label{display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:8px}
+.ref-value{display:flex;align-items:center;justify-content:center;gap:10px}
+.ref-value strong{
+  font-family:'Cairo',sans-serif;font-size:24px;letter-spacing:2px;
+  color:var(--navy);direction:ltr;
+}
+.copy{
+  background:var(--sky-soft);color:var(--navy);border:none;border-radius:9px;
+  padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:.15s var(--ease);
+}
+.copy:hover{background:#d3ebf8}
+.ref-hint{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:10px}
+
+.ghost{
+  width:100%;background:transparent;border:1.5px solid var(--line);color:var(--navy);
+  border-radius:16px;padding:14px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:.18s var(--ease);
+}
+.ghost:hover{background:#fff;border-color:var(--sky);color:var(--sky)}
+
+/* =========================================================
+   لوحي — نبدأ بإظهار بطاقة على خلفية داكنة
+   ========================================================= */
+@media (min-width:640px){
+  body{
+    background:
+      radial-gradient(700px 380px at 82% -6%,#0f6ba0 0%,transparent 60%),
+      radial-gradient(600px 320px at -5% 105%,#073d5f 0%,transparent 55%),
+      #05283d;
+    background-attachment:fixed;
+  }
+  .stage{align-items:center;justify-content:center;padding:32px 24px}
+  .device{
+    min-height:0;width:min(560px,100%);
+    border-radius:var(--radius-lg);overflow:hidden;
+    box-shadow:0 44px 90px -34px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06);
+  }
+  .head{padding:46px 34px 62px}
+  .sheet{padding:10px 34px 36px}
+}
+
+/* =========================================================
+   حاسوب — عمودان: هوية المستشفى + النموذج
+   ========================================================= */
+@media (min-width:960px){
+  .stage{padding:40px}
+  .device{
+    width:min(1060px,100%);
+    display:grid;
+    grid-template-columns:minmax(320px,.85fr) 1.15fr;
+    align-items:stretch;
+  }
+
+  .head{
+    display:flex;flex-direction:column;justify-content:space-between;
+    text-align:start;padding:52px 40px;
+  }
+  .head .glow{width:320px;height:320px;top:-100px;left:-90px}
+  .logo{justify-content:flex-start;margin-bottom:34px}
+  .logo .wm{text-align:start}
+  .logo .wm .ar{font-size:23px}
+  .head h1{font-size:30px}
+  .head .tag{margin-top:10px;font-size:13px}
+  .head .tag::before{display:none}
+  .head .lede{margin-inline:0;font-size:14px;max-width:34ch;margin-top:16px}
+
+  .assurances{
+    display:flex;flex-direction:column;gap:16px;
+    list-style:none;margin-top:44px;position:relative;z-index:2;
+  }
+  .assurances li{display:flex;align-items:flex-start;gap:12px;font-size:12.5px;color:#cfeafa}
+  .assurances .ai{
+    width:34px;height:34px;flex:none;border-radius:11px;
+    background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:16px;
+  }
+  .assurances li strong{display:block;color:#fff;font-size:13.5px;font-weight:600;line-height:1.5}
+
+  /* القوس يصبح رأسياً على الحافة الداخلية للترويسة */
+  .arch{
+    inset:0 auto 0 -1px;width:32px;height:auto;
+    border-radius:0 50% 50% 0/0 100% 100% 0;
+  }
+
+  .sheet{padding:44px 46px;display:flex;flex-direction:column;justify-content:center}
+  .kicker:first-child{margin-top:0}
+  .types{flex-direction:row}
+  .types .type{flex:1;flex-direction:column;align-items:flex-start;gap:10px;padding:16px 15px}
+  .types .type .tick{position:absolute;top:14px;inset-inline-end:14px;margin:0}
+  .types .type .txt strong{font-size:14.5px}
+  .type:hover{transform:translateY(-3px)}
+  .done{padding:20px 0}
+}
+
+/* شاشات كبيرة جداً */
+@media (min-width:1400px){
+  .device{width:min(1160px,100%)}
+  .sheet{padding:52px 60px}
+}
+
+/* احترام تفضيل تقليل الحركة */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  .type:hover{transform:none}
+  .submit:hover:not(:disabled){transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="device">
+
+    <!-- ===== الترويسة / العمود الجانبي على الشاشات الكبيرة ===== -->
+    <header class="head">
+      <span class="glow" aria-hidden="true"></span>
+
+      <div class="head-top">
+        <div class="logo">
+          <span class="wm">
+            <span class="ar">مستشفى الأمل</span>
+            <span class="en">AL AMAL HOSPITAL</span>
+          </span>
+        </div>
+
+        <h1>رأيك يهمّنا</h1>
+        <div class="tag">من الأمل تبدأ الحياة</div>
+        <p class="lede">شاركنا كلمة شكر، فكرة تطوير، أو ملاحظة — نقرأ كل رسالة بعناية.</p>
+      </div>
+
+      <!-- يظهر على الشاشات الكبيرة فقط -->
+      <ul class="assurances">
+        <li><span class="ai">🕒</span><span><strong>خلال 48 ساعة</strong>نتواصل معك بخصوص الشكاوى</span></li>
+        <li><span class="ai">🔐</span><span><strong>سرّية تامة</strong>بياناتك لا تُشارك خارج المستشفى</span></li>
+        <li><span class="ai">☎️</span><span><strong>خدمة العملاء</strong>962 6 000 0000+</span></li>
+      </ul>
+
+      <span class="arch" aria-hidden="true"></span>
+    </header>
+
+    <!-- ===== النموذج ===== -->
+    <main class="sheet">
+      <form id="feedbackForm" class="form" novalidate>
+
+        <div class="kicker">نوع الرسالة</div>
+        <div class="types" role="radiogroup" aria-label="نوع الرسالة">
+          <label class="type thanks">
+            <input type="radio" name="type" value="Thanks" checked>
+            <span class="ic" aria-hidden="true">💙</span>
+            <span class="txt"><strong>شكر وتقدير</strong><small>لتجربة أسعدتك</small></span>
+            <span class="tick" aria-hidden="true">✓</span>
+          </label>
+          <label class="type suggest">
+            <input type="radio" name="type" value="Suggestion">
+            <span class="ic" aria-hidden="true">💡</span>
+            <span class="txt"><strong>اقتراح</strong><small>فكرة لتحسين الخدمة</small></span>
+            <span class="tick" aria-hidden="true">✓</span>
+          </label>
+          <label class="type complaint">
+            <input type="radio" name="type" value="Complaint">
+            <span class="ic" aria-hidden="true">📋</span>
+            <span class="txt"><strong>شكوى</strong><small>أمر يحتاج معالجة</small></span>
+            <span class="tick" aria-hidden="true">✓</span>
+          </label>
+        </div>
+
+        <div class="kicker">بياناتك</div>
+
+        <div class="row">
+          <div class="field">
+            <label for="firstName">الاسم الأول <span class="req">*</span></label>
+            <input class="inp" id="firstName" name="firstName" type="text"
+                   placeholder="سارة" autocomplete="given-name" maxlength="60" required>
+            <p class="err" data-err-for="firstName"></p>
+          </div>
+          <div class="field">
+            <label for="lastName">اسم العائلة <span class="req">*</span></label>
+            <input class="inp" id="lastName" name="lastName" type="text"
+                   placeholder="الأحمد" autocomplete="family-name" maxlength="60" required>
+            <p class="err" data-err-for="lastName"></p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="phoneNumber">رقم الهاتف <span class="req">*</span></label>
+          <div class="phone-row">
+            <input class="inp code" id="phoneCountryCode" type="text" value="962+" readonly tabindex="-1" aria-label="مفتاح الدولة">
+            <input class="inp" id="phoneNumber" name="phoneNumber" type="tel"
+                   placeholder="7X XXX XXXX" dir="ltr" inputmode="numeric"
+                   autocomplete="tel-national" maxlength="15" required>
+          </div>
+          <p class="err" data-err-for="phoneNumber"></p>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="visitDate">التاريخ <span class="req">*</span></label>
+            <input class="inp" id="visitDate" name="visitDate" type="date" required>
+            <p class="err" data-err-for="visitDate"></p>
+          </div>
+          <div class="field">
+            <label for="departmentId">القسم <span class="req">*</span></label>
+            <select class="inp" id="departmentId" name="departmentId" required>
+              <option value="" selected disabled>اختر</option>
+            </select>
+            <p class="err" data-err-for="departmentId"></p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="details">تفاصيل إضافية <span class="req optional-star" id="detailsStar" hidden>*</span></label>
+          <textarea class="inp" id="details" name="details" maxlength="2000"
+                    placeholder="اكتب رسالتك هنا بالتفصيل..."></textarea>
+          <div class="under">
+            <p class="err" data-err-for="details"></p>
+            <span class="counter"><span id="detailsCount">0</span>/2000</span>
+          </div>
+        </div>
+
+        <p class="form-error" id="formError" role="alert" hidden></p>
+
+        <button class="submit" type="submit" id="submitBtn">
+          <span class="label">إرسال الرسالة</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+
+        <div class="foot">🔒 بياناتك سرّية وتُستخدم لمعالجة طلبك فقط</div>
+      </form>
+
+      <!-- ===== شاشة النجاح ===== -->
+      <section class="done" id="successView" hidden aria-live="polite">
+        <div class="done-ring"><span>✓</span></div>
+        <h2>وصلتنا رسالتك</h2>
+        <p>شكراً لثقتك بنا. فريق تجربة المريض سيطّلع على رسالتك.</p>
+
+        <div class="ref-card">
+          <span class="ref-label">الرقم المرجعي</span>
+          <div class="ref-value">
+            <strong id="refNumber">—</strong>
+            <button type="button" class="copy" id="copyRef" aria-label="نسخ الرقم المرجعي">نسخ</button>
+          </div>
+          <span class="ref-hint">احتفظ بهذا الرقم لمتابعة رسالتك</span>
+        </div>
+
+        <button type="button" class="ghost" id="againBtn">إرسال رسالة أخرى</button>
+      </section>
+    </main>
+
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   نموذج آراء المرضى — نسخة مستقلّة تُستضاف على نطاق فرعي خاص
+   (feedback.<domain>) وتنادي واجهة AlAmalBusiness من أصل مختلف.
+   ========================================================= */
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------
+  // الإعداد الوحيد المطلوب قبل الرفع: عنوان واجهة AlAmalBusiness.
+  //
+  // The one line to set before uploading. This page is served from its own
+  // subdomain, so — unlike the in-app original — every call is cross-origin
+  // and needs the API's absolute origin here. That origin must ALSO be listed
+  // in the API's Cors:AllowedOrigins, or the browser blocks the request
+  // before it ever reaches the controller.
+  // ------------------------------------------------------------------
+  const API_BASE = 'https://api.alamalhospitaljo.com';
+
+  // The anonymous surface only (PublicFeedbackController). The staff routes
+  // under /api/Feedback require a JWT — the patient form must never call them.
+  const API = {
+    departments: API_BASE + '/api/public/feedback/departments',
+    feedback: API_BASE + '/api/public/feedback'
+  };
+
+  const form = document.getElementById('feedbackForm');
+  const successView = document.getElementById('successView');
+  const submitBtn = document.getElementById('submitBtn');
+  const formError = document.getElementById('formError');
+  const departmentSelect = document.getElementById('departmentId');
+  const detailsInput = document.getElementById('details');
+  const detailsCount = document.getElementById('detailsCount');
+  const detailsStar = document.getElementById('detailsStar');
+  const visitDate = document.getElementById('visitDate');
+  const phoneInput = document.getElementById('phoneNumber');
+
+  /* ---------- التهيئة ---------- */
+
+  // التاريخ: لا يتجاوز اليوم، ولا يسبق سنتين
+  const today = new Date();
+  const iso = d => d.toISOString().slice(0, 10);
+  const twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
+  visitDate.max = iso(today);
+  visitDate.min = iso(twoYearsAgo);
+  visitDate.value = iso(today);
+
+  loadDepartments();
+
+  /* ---------- الأقسام من قاعدة البيانات ---------- */
+  async function loadDepartments() {
+    departmentSelect.disabled = true;
+    try {
+      const res = await fetch(API.departments, { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      // This controller returns the array itself; the `data` branch keeps the
+      // page working if it is ever wrapped in an envelope.
+      const payload = await res.json();
+      const items = Array.isArray(payload) ? payload : (payload.data || []);
+
+      for (const dept of items) {
+        const opt = document.createElement('option');
+        opt.value = dept.id;
+        opt.textContent = dept.name || dept.nameAr;
+        departmentSelect.appendChild(opt);
+      }
+      departmentSelect.disabled = false;
+    } catch (err) {
+      console.error('تعذّر تحميل الأقسام', err);
+      departmentSelect.disabled = false;
+      showFormError('تعذّر تحميل قائمة الأقسام. حدّث الصفحة وحاول مرة أخرى.');
+    }
+  }
+
+  /* ---------- تحويل الأرقام العربية وتنظيف الهاتف ---------- */
+  const arabicDigits = /[٠-٩۰-۹]/g;
+  function toLatinDigits(value) {
+    return value.replace(arabicDigits, ch => {
+      const code = ch.charCodeAt(0);
+      const base = code >= 0x06F0 ? 0x06F0 : 0x0660;
+      return String(code - base);
+    });
+  }
+
+  phoneInput.addEventListener('input', () => {
+    const cleaned = toLatinDigits(phoneInput.value).replace(/[^\d\s-]/g, '');
+    if (cleaned !== phoneInput.value) phoneInput.value = cleaned;
+    clearFieldError(phoneInput);
+  });
+
+  /* ---------- عدّاد التفاصيل ---------- */
+  detailsInput.addEventListener('input', () => {
+    detailsCount.textContent = detailsInput.value.length;
+    clearFieldError(detailsInput);
+  });
+
+  /* ---------- الشكوى تتطلّب تفاصيل ---------- */
+  form.querySelectorAll('input[name="type"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isComplaint = radio.value === 'Complaint';
+      detailsStar.hidden = !isComplaint;
+      detailsInput.placeholder = isComplaint
+        ? 'صف ما حدث بالتفصيل: المكان، الوقت، والأشخاص إن أمكن...'
+        : 'اكتب رسالتك هنا بالتفصيل...';
+    });
+  });
+
+  /* ---------- مسح الخطأ عند الكتابة ---------- */
+  form.querySelectorAll('.inp').forEach(el => {
+    el.addEventListener('input', () => clearFieldError(el));
+    el.addEventListener('change', () => clearFieldError(el));
+  });
+
+  /* ---------- التحقّق ---------- */
+  function validate() {
+    const errors = {};
+    const value = id => document.getElementById(id).value.trim();
+
+    if (value('firstName').length < 2) errors.firstName = 'الاسم الأول مطلوب (حرفان على الأقل)';
+    if (value('lastName').length < 2) errors.lastName = 'اسم العائلة مطلوب (حرفان على الأقل)';
+
+    const digits = toLatinDigits(value('phoneNumber')).replace(/\D/g, '');
+    if (!digits) errors.phoneNumber = 'رقم الهاتف مطلوب';
+    else if (digits.length < 7 || digits.length > 15) errors.phoneNumber = 'رقم الهاتف غير صحيح';
+
+    if (!value('visitDate')) {
+      errors.visitDate = 'التاريخ مطلوب';
+    } else if (value('visitDate') > visitDate.max) {
+      errors.visitDate = 'التاريخ لا يمكن أن يكون في المستقبل';
+    } else if (value('visitDate') < visitDate.min) {
+      errors.visitDate = 'التاريخ قديم جداً (أكثر من سنتين)';
+    }
+
+    if (!value('departmentId')) errors.departmentId = 'يرجى اختيار القسم';
+
+    const type = form.querySelector('input[name="type"]:checked').value;
+    if (type === 'Complaint' && !value('details')) errors.details = 'يرجى كتابة تفاصيل الشكوى';
+
+    return errors;
+  }
+
+  function showFieldErrors(errors) {
+    let firstInvalid = null;
+    for (const [field, message] of Object.entries(errors)) {
+      const input = document.getElementById(field);
+      const slot = form.querySelector(`[data-err-for="${field}"]`);
+      if (input) {
+        input.classList.add('invalid');
+        input.setAttribute('aria-invalid', 'true');
+        if (!firstInvalid) firstInvalid = input;
+      }
+      if (slot) slot.textContent = message;
+    }
+    if (firstInvalid) {
+      firstInvalid.focus({ preventScroll: true });
+      firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function clearFieldError(el) {
+    el.classList.remove('invalid');
+    el.removeAttribute('aria-invalid');
+    const slot = form.querySelector(`[data-err-for="${el.id}"]`);
+    if (slot) slot.textContent = '';
+  }
+
+  function clearAllErrors() {
+    form.querySelectorAll('.inp').forEach(clearFieldError);
+    formError.hidden = true;
+    formError.textContent = '';
+  }
+
+  function showFormError(message) {
+    formError.textContent = message;
+    formError.hidden = false;
+    formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* ---------- الإرسال ---------- */
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    clearAllErrors();
+
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      showFieldErrors(errors);
+      return;
+    }
+
+    const payload = {
+      type: form.querySelector('input[name="type"]:checked').value,
+      firstName: document.getElementById('firstName').value.trim(),
+      lastName: document.getElementById('lastName').value.trim(),
+      phoneCountryCode: '+962',
+      phoneNumber: toLatinDigits(phoneInput.value).replace(/\D/g, ''),
+      visitDate: visitDate.value,
+      departmentId: Number(departmentSelect.value),
+      details: detailsInput.value.trim() || null
+    };
+
+    setLoading(true);
+    try {
+      const res = await fetch(API.feedback, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const body = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        // 429 comes back from the rate limiter with no JSON body at all.
+        if (res.status === 429) {
+          showFormError('حاولت أكثر من اللازم خلال وقت قصير. انتظر دقيقة ثم أعد المحاولة.');
+          return;
+        }
+        showFormError(extractError(body) || 'تعذّر إرسال الرسالة، يرجى المحاولة مرة أخرى.');
+        return;
+      }
+
+      showSuccess(body.referenceNumber);
+    } catch (err) {
+      console.error(err);
+      showFormError('تعذّر الاتصال بالخادم. تأكّد من الاتصال بالإنترنت وحاول مجدداً.');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  /** يستخرج رسالة الخطأ سواء جاءت من الخدمة أو من التحقّق التلقائي في ASP.NET */
+  function extractError(body) {
+    if (!body) return null;
+    if (body.error) return body.error;      // FeedbackCreatedResponse
+    if (body.message) return body.message;
+    if (body.errors) {
+      const first = Object.values(body.errors)[0];
+      if (Array.isArray(first) && first.length) return first[0];
+    }
+    if (body.title) return body.title;
+    return null;
+  }
+
+  function setLoading(isLoading) {
+    submitBtn.disabled = isLoading;
+    submitBtn.classList.toggle('loading', isLoading);
+    submitBtn.querySelector('.label').textContent = isLoading ? 'جارٍ الإرسال...' : 'إرسال الرسالة';
+  }
+
+  /* ---------- شاشة النجاح ---------- */
+  function showSuccess(reference) {
+    document.getElementById('refNumber').textContent = reference;
+    form.hidden = true;
+    successView.hidden = false;
+    successView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  document.getElementById('againBtn').addEventListener('click', () => {
+    form.reset();
+    clearAllErrors();
+    detailsCount.textContent = '0';
+    detailsStar.hidden = true;
+    visitDate.value = iso(new Date());
+    successView.hidden = true;
+    form.hidden = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  document.getElementById('copyRef').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    const reference = document.getElementById('refNumber').textContent;
+    try {
+      await navigator.clipboard.writeText(reference);
+      button.textContent = 'تم النسخ ✓';
+      setTimeout(() => { button.textContent = 'نسخ'; }, 1800);
+    } catch {
+      button.textContent = 'انسخه يدوياً';
+      setTimeout(() => { button.textContent = 'نسخ'; }, 1800);
+    }
+  });
+})();
+</script>
+</body>
+</html>
