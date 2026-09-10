@@ -12,10 +12,10 @@ is not.
 ## The two things that must be set
 
 **1. `API_BASE` — the AlAmalBusiness API origin.** Near the top of the `<script>`
-block in `index.html`, currently set and correct:
+block in `index.html`:
 
 ```js
-const API_BASE = 'https://api.alamalhospitaljo.com';
+const API_BASE = 'https://alamalhosp-001-site6.itempurl.com';
 ```
 
 It is hardcoded rather than configured, and that is deliberate: this is a static
