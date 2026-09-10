@@ -9,7 +9,7 @@
 <title>آراء المرضى | مستشفى الأمل</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Cairo:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* =========================================================
    مستشفى الأمل — نموذج آراء المرضى
@@ -42,7 +42,10 @@
 html{-webkit-text-size-adjust:100%}
 
 body{
-  font-family:'IBM Plex Sans Arabic',system-ui,-apple-system,'Segoe UI',sans-serif;
+  /* Cairo throughout. The headings and buttons already asked for it by name;
+     this makes it the body face too, so IBM Plex Sans Arabic is no longer
+     loaded at all. */
+  font-family:'Cairo',system-ui,-apple-system,'Segoe UI',sans-serif;
   background:var(--paper);
   color:var(--ink);
   line-height:1.6;
@@ -136,6 +139,10 @@ body{
 .type:hover{transform:translateX(-3px)}
 .type:has(input:focus-visible){outline:2px solid var(--sky);outline-offset:3px}
 
+/* Nothing is preselected any more, so the group needs an invalid state of its
+   own — the per-field .inp.invalid rule has no element to attach to here. */
+.types.invalid .type{border-color:var(--danger)}
+
 .type.thanks:has(:checked){border-color:var(--thanks);background:#e9f7f4}
 .type.thanks:has(:checked) .ic{background:var(--thanks);color:#fff}
 .type.thanks:has(:checked) .tick{background:var(--thanks);border-color:var(--thanks)}
@@ -174,7 +181,10 @@ input[type="date"].inp{min-height:48px}
 input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.55}
 
 .phone-row{display:flex;gap:10px}
-.phone-row .code{width:76px;text-align:center;font-weight:600;color:var(--ink-soft);flex:none;cursor:default}
+/* Wider than the old read-only "+962" box: this now holds a country name as
+   well as the dial code, and the arrow eats 36px of it. Still narrow enough to
+   leave the number itself room at 360px. */
+.phone-row .code{width:148px;flex:none;font-weight:500;padding-inline-start:12px}
 
 /* حالة الخطأ */
 .inp.invalid{border-color:var(--danger);background:#fdf1f1}
@@ -380,10 +390,10 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
     <main class="sheet">
       <form id="feedbackForm" class="form" novalidate>
 
-        <div class="kicker">نوع الرسالة</div>
-        <div class="types" role="radiogroup" aria-label="نوع الرسالة">
+        <div class="kicker">نوع الرسالة <span class="req">*</span></div>
+        <div class="types" id="typeGroup" role="radiogroup" aria-label="نوع الرسالة">
           <label class="type thanks">
-            <input type="radio" name="type" value="Thanks" checked>
+            <input type="radio" name="type" value="Thanks">
             <span class="ic" aria-hidden="true">💙</span>
             <span class="txt"><strong>شكر وتقدير</strong><small>لتجربة أسعدتك</small></span>
             <span class="tick" aria-hidden="true">✓</span>
@@ -401,6 +411,7 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
             <span class="tick" aria-hidden="true">✓</span>
           </label>
         </div>
+        <p class="err" data-err-for="type"></p>
 
         <div class="kicker">بياناتك</div>
 
@@ -422,7 +433,7 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
         <div class="field">
           <label for="phoneNumber">رقم الهاتف <span class="req">*</span></label>
           <div class="phone-row">
-            <input class="inp code" id="phoneCountryCode" type="text" value="962+" readonly tabindex="-1" aria-label="مفتاح الدولة">
+            <select class="inp code" id="phoneCountryCode" aria-label="مفتاح الدولة"></select>
             <input class="inp" id="phoneNumber" name="phoneNumber" type="tel"
                    placeholder="7X XXX XXXX" dir="ltr" inputmode="numeric"
                    autocomplete="tel-national" maxlength="15" required>
@@ -523,6 +534,8 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
   const detailsStar = document.getElementById('detailsStar');
   const visitDate = document.getElementById('visitDate');
   const phoneInput = document.getElementById('phoneNumber');
+  const countrySelect = document.getElementById('phoneCountryCode');
+  const typeGroup = document.getElementById('typeGroup');
 
   /* ---------- التهيئة ---------- */
 
@@ -534,6 +547,102 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
   visitDate.min = iso(twoYearsAgo);
   visitDate.value = iso(today);
 
+  /* ---------- مفاتيح الدول ---------- */
+
+  // [الاسم بالعربية, المفتاح]. The API stores this in a 6-character column, so
+  // every value here has to stay within that — the longest below is 5 ("+1868").
+  const COUNTRIES = [
+    ['أفغانستان','+93'],['ألبانيا','+355'],['الجزائر','+213'],['أندورا','+376'],
+    ['أنغولا','+244'],['أنتيغوا وبربودا','+1268'],['الأرجنتين','+54'],['أرمينيا','+374'],
+    ['أستراليا','+61'],['النمسا','+43'],['أذربيجان','+994'],['الباهاما','+1242'],
+    ['البحرين','+973'],['بنغلاديش','+880'],['بربادوس','+1246'],['بيلاروسيا','+375'],
+    ['بلجيكا','+32'],['بليز','+501'],['بنين','+229'],['بوتان','+975'],
+    ['بوليفيا','+591'],['البوسنة والهرسك','+387'],['بوتسوانا','+267'],['البرازيل','+55'],
+    ['بروناي','+673'],['بلغاريا','+359'],['بوركينا فاسو','+226'],['بوروندي','+257'],
+    ['كمبوديا','+855'],['الكاميرون','+237'],['كندا','+1'],['الرأس الأخضر','+238'],
+    ['أفريقيا الوسطى','+236'],['تشاد','+235'],['تشيلي','+56'],['الصين','+86'],
+    ['كولومبيا','+57'],['جزر القمر','+269'],['الكونغو','+242'],['الكونغو الديمقراطية','+243'],
+    ['كوستاريكا','+506'],['ساحل العاج','+225'],['كرواتيا','+385'],['كوبا','+53'],
+    ['قبرص','+357'],['التشيك','+420'],['الدنمارك','+45'],['جيبوتي','+253'],
+    ['دومينيكا','+1767'],['الدومينيكان','+1809'],['الإكوادور','+593'],['مصر','+20'],
+    ['السلفادور','+503'],['غينيا الاستوائية','+240'],['إريتريا','+291'],['إستونيا','+372'],
+    ['إثيوبيا','+251'],['فيجي','+679'],['فنلندا','+358'],['فرنسا','+33'],
+    ['الغابون','+241'],['غامبيا','+220'],['جورجيا','+995'],['ألمانيا','+49'],
+    ['غانا','+233'],['اليونان','+30'],['غرينادا','+1473'],['غواتيمالا','+502'],
+    ['غينيا','+224'],['غينيا بيساو','+245'],['غيانا','+592'],['هايتي','+509'],
+    ['هندوراس','+504'],['هونغ كونغ','+852'],['المجر','+36'],['آيسلندا','+354'],
+    ['الهند','+91'],['إندونيسيا','+62'],['إيران','+98'],['العراق','+964'],
+    ['أيرلندا','+353'],['إسرائيل','+972'],['إيطاليا','+39'],['جامايكا','+1876'],
+    ['اليابان','+81'],['الأردن','+962'],['كازاخستان','+7'],['كينيا','+254'],
+    ['كيريباتي','+686'],['الكويت','+965'],['قيرغيزستان','+996'],['لاوس','+856'],
+    ['لاتفيا','+371'],['لبنان','+961'],['ليسوتو','+266'],['ليبيريا','+231'],
+    ['ليبيا','+218'],['ليختنشتاين','+423'],['ليتوانيا','+370'],['لوكسمبورغ','+352'],
+    ['ماكاو','+853'],['مقدونيا الشمالية','+389'],['مدغشقر','+261'],['مالاوي','+265'],
+    ['ماليزيا','+60'],['المالديف','+960'],['مالي','+223'],['مالطا','+356'],
+    ['جزر مارشال','+692'],['موريتانيا','+222'],['موريشيوس','+230'],['المكسيك','+52'],
+    ['ميكرونيزيا','+691'],['مولدوفا','+373'],['موناكو','+377'],['منغوليا','+976'],
+    ['الجبل الأسود','+382'],['المغرب','+212'],['موزمبيق','+258'],['ميانمار','+95'],
+    ['ناميبيا','+264'],['ناورو','+674'],['نيبال','+977'],['هولندا','+31'],
+    ['نيوزيلندا','+64'],['نيكاراغوا','+505'],['النيجر','+227'],['نيجيريا','+234'],
+    ['كوريا الشمالية','+850'],['النرويج','+47'],['عُمان','+968'],['باكستان','+92'],
+    ['بالاو','+680'],['فلسطين','+970'],['بنما','+507'],['بابوا غينيا الجديدة','+675'],
+    ['باراغواي','+595'],['بيرو','+51'],['الفلبين','+63'],['بولندا','+48'],
+    ['البرتغال','+351'],['بورتوريكو','+1787'],['قطر','+974'],['رومانيا','+40'],
+    ['روسيا','+7'],['رواندا','+250'],['سانت كيتس ونيفيس','+1869'],['سانت لوسيا','+1758'],
+    ['سانت فنسنت والغرينادين','+1784'],['ساموا','+685'],['سان مارينو','+378'],['ساو تومي وبرينسيبي','+239'],
+    ['السعودية','+966'],['السنغال','+221'],['صربيا','+381'],['سيشل','+248'],
+    ['سيراليون','+232'],['سنغافورة','+65'],['سلوفاكيا','+421'],['سلوفينيا','+386'],
+    ['جزر سليمان','+677'],['الصومال','+252'],['جنوب أفريقيا','+27'],['كوريا الجنوبية','+82'],
+    ['جنوب السودان','+211'],['إسبانيا','+34'],['سريلانكا','+94'],['السودان','+249'],
+    ['سورينام','+597'],['السويد','+46'],['سويسرا','+41'],['سوريا','+963'],
+    ['تايوان','+886'],['طاجيكستان','+992'],['تنزانيا','+255'],['تايلاند','+66'],
+    ['تيمور الشرقية','+670'],['توغو','+228'],['تونغا','+676'],['ترينيداد وتوباغو','+1868'],
+    ['تونس','+216'],['تركيا','+90'],['تركمانستان','+993'],['توفالو','+688'],
+    ['أوغندا','+256'],['أوكرانيا','+380'],['الإمارات','+971'],['بريطانيا','+44'],
+    ['الولايات المتحدة','+1'],['أوروغواي','+598'],['أوزبكستان','+998'],['فانواتو','+678'],
+    ['الفاتيكان','+379'],['فنزويلا','+58'],['فيتنام','+84'],['اليمن','+967'],
+    ['زامبيا','+260'],['زيمبابوي','+263']
+  ];
+
+  // Nearly every patient here is one of these, and a ~190-item list is a long
+  // scroll on a phone — so they are repeated at the top rather than left to be
+  // hunted for alphabetically.
+  const COMMON = ['+962','+966','+971','+965','+974','+973','+968','+964','+963','+970','+961','+20'];
+
+  const DEFAULT_CODE = '+962';
+
+  function buildCountryList() {
+    const byCode = new Map(COUNTRIES.map(([name, code]) => [code, name]));
+
+    // U+200E (left-to-right mark) before the dial code: without it the leading
+    // "+" is a neutral character and bidi reordering renders "+962" as "962+"
+    // inside this right-to-left option text.
+    const option = (name, code) => {
+      const el = document.createElement('option');
+      el.value = code;
+      el.textContent = name + ' ‎' + code;
+      return el;
+    };
+
+    const common = document.createElement('optgroup');
+    common.label = 'الأكثر استخداماً';
+    for (const code of COMMON) common.appendChild(option(byCode.get(code), code));
+
+    const all = document.createElement('optgroup');
+    all.label = 'كل الدول';
+    for (const [name, code] of [...COUNTRIES].sort((a, b) => a[0].localeCompare(b[0], 'ar'))) {
+      all.appendChild(option(name, code));
+    }
+
+    countrySelect.append(common, all);
+    countrySelect.value = DEFAULT_CODE;
+  }
+
+  // Below the COUNTRIES/COMMON/DEFAULT_CODE declarations on purpose: they are
+  // `const`, so calling buildCountryList() any earlier hits the temporal dead
+  // zone, and the throw would take the rest of this script — the department
+  // fetch and every event listener — down with it.
+  buildCountryList();
   loadDepartments();
 
   /* ---------- الأقسام من قاعدة البيانات ---------- */
@@ -592,8 +701,21 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
       detailsInput.placeholder = isComplaint
         ? 'صف ما حدث بالتفصيل: المكان، الوقت، والأشخاص إن أمكن...'
         : 'اكتب رسالتك هنا بالتفصيل...';
+      clearTypeError();
     });
   });
+
+  /** النوع المختار، أو null إذا لم يُختر شيء بعد */
+  function selectedType() {
+    const checked = form.querySelector('input[name="type"]:checked');
+    return checked ? checked.value : null;
+  }
+
+  function clearTypeError() {
+    typeGroup.classList.remove('invalid');
+    const slot = form.querySelector('[data-err-for="type"]');
+    if (slot) slot.textContent = '';
+  }
 
   /* ---------- مسح الخطأ عند الكتابة ---------- */
   form.querySelectorAll('.inp').forEach(el => {
@@ -605,6 +727,10 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
   function validate() {
     const errors = {};
     const value = id => document.getElementById(id).value.trim();
+
+    // Nothing is preselected, so this is a real check now rather than a
+    // formality — the form can genuinely be submitted with no type chosen.
+    if (!selectedType()) errors.type = 'يرجى اختيار نوع الرسالة';
 
     if (value('firstName').length < 2) errors.firstName = 'الاسم الأول مطلوب (حرفان على الأقل)';
     if (value('lastName').length < 2) errors.lastName = 'اسم العائلة مطلوب (حرفان على الأقل)';
@@ -623,8 +749,7 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
 
     if (!value('departmentId')) errors.departmentId = 'يرجى اختيار القسم';
 
-    const type = form.querySelector('input[name="type"]:checked').value;
-    if (type === 'Complaint' && !value('details')) errors.details = 'يرجى كتابة تفاصيل الشكوى';
+    if (selectedType() === 'Complaint' && !value('details')) errors.details = 'يرجى كتابة تفاصيل الشكوى';
 
     return errors;
   }
@@ -632,14 +757,23 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
   function showFieldErrors(errors) {
     let firstInvalid = null;
     for (const [field, message] of Object.entries(errors)) {
-      const input = document.getElementById(field);
       const slot = form.querySelector(`[data-err-for="${field}"]`);
+      if (slot) slot.textContent = message;
+
+      // "type" is a radio group, not a single input, so it colours the whole
+      // card row and focuses the first radio instead of an .inp.
+      if (field === 'type') {
+        typeGroup.classList.add('invalid');
+        if (!firstInvalid) firstInvalid = typeGroup.querySelector('input[name="type"]');
+        continue;
+      }
+
+      const input = document.getElementById(field);
       if (input) {
         input.classList.add('invalid');
         input.setAttribute('aria-invalid', 'true');
         if (!firstInvalid) firstInvalid = input;
       }
-      if (slot) slot.textContent = message;
     }
     if (firstInvalid) {
       firstInvalid.focus({ preventScroll: true });
@@ -656,6 +790,7 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
 
   function clearAllErrors() {
     form.querySelectorAll('.inp').forEach(clearFieldError);
+    clearTypeError();
     formError.hidden = true;
     formError.textContent = '';
   }
@@ -678,10 +813,10 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
     }
 
     const payload = {
-      type: form.querySelector('input[name="type"]:checked').value,
+      type: selectedType(),
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
-      phoneCountryCode: '+962',
+      phoneCountryCode: countrySelect.value,
       phoneNumber: toLatinDigits(phoneInput.value).replace(/\D/g, ''),
       visitDate: visitDate.value,
       departmentId: Number(departmentSelect.value),
@@ -749,7 +884,11 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
     clearAllErrors();
     detailsCount.textContent = '0';
     detailsStar.hidden = true;
+    detailsInput.placeholder = 'اكتب رسالتك هنا بالتفصيل...';
     visitDate.value = iso(new Date());
+    // form.reset() restores the markup default, and the select has none — the
+    // options are built at runtime — so put Jordan back explicitly.
+    countrySelect.value = DEFAULT_CODE;
     successView.hidden = true;
     form.hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });

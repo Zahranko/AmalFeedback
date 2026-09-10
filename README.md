@@ -4,10 +4,21 @@ The anonymous patient feedback form (`رأيك يهمّنا`), hosted on its own
 and served as a single self-contained `index.html` — CSS, JavaScript and all.
 No build step, no dependencies, no framework.
 
-The design is a byte-for-byte copy of the original in-app form
-(`D:\repos\CRMS\Feedback\wwwroot\index.html` + `css/site.css`); only the API
-wiring differs, because that page was same-origin with its backend and this one
-is not.
+It started as a byte-for-byte copy of the original in-app form
+(`D:\repos\CRMS\Feedback\wwwroot\index.html` + `css/site.css`). It has since
+diverged deliberately:
+
+- **Cairo throughout.** The original set IBM Plex Sans Arabic as the body face
+  and used Cairo only for headings and buttons; Cairo is now the whole page and
+  IBM Plex is no longer loaded.
+- **The country code is a dropdown**, ~198 countries with Arabic names, the
+  twelve most likely repeated in a group at the top. It was a read-only `+962`
+  box. The submitted `phoneCountryCode` follows the selection.
+- **No message type is preselected**, and one must be chosen. The original
+  defaulted to *شكر وتقدير*, which meant a patient who never touched that row
+  silently filed a thank-you.
+- The API wiring differs throughout, because the original was same-origin with
+  its backend and this page is not.
 
 ## The two things that must be set
 
