@@ -12,15 +12,18 @@ is not.
 ## The two things that must be set
 
 **1. `API_BASE` — the AlAmalBusiness API origin.** Near the top of the `<script>`
-block in `index.html`:
+block in `index.html`, currently set and correct:
 
 ```js
 const API_BASE = 'https://api.alamalhospitaljo.com';
 ```
 
-> ⚠️ That value is still a **placeholder**. Set it to the real API origin
-> (the same host `alamal-console` points `API_BASE_URL` at) before the form can
-> load departments or accept a submission.
+It is hardcoded rather than configured, and that is deliberate: this is a static
+page with no server process, so there is no runtime to read an environment
+variable. Nor is one wanted — the value is used by JavaScript in the patient's
+browser, so it is public no matter where it is kept. Changing it means editing
+this line and pushing. Secrets (the DB connection string, the JWT signing key)
+live on the API and never appear here.
 
 **2. CORS — this subdomain must be allow-listed on the API.** Every call is
 cross-origin now, so the browser blocks it before the controller ever sees it.
