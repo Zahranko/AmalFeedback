@@ -1,0 +1,21 @@
+# Hostinger clones this repo straight into the subdomain's document root, so
+# every file that is in the repo is reachable over HTTP — including the ones
+# that are here for developers rather than for patients. Block those.
+
+DirectoryIndex index.html
+
+# README.md documents the API origin and the CORS setup; .git/ would expose the
+# entire history. Neither belongs on a public web root.
+<FilesMatch "^(README\.md|\.gitignore|\.htaccess)$">
+  Require all denied
+</FilesMatch>
+
+RedirectMatch 404 /\.git
+
+# The page is a single file that changes rarely but must never be stale when it
+# does — a patient loading a cached copy would post to the old API origin.
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>

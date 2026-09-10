@@ -52,20 +52,25 @@ from this page.
 
 ## Deploying
 
-Pushing to `main` runs `.github/workflows/deploy.yml`, which FTPs the root of
-the repo to Hostinger. It needs three **secrets** and one **variable** under
-*Settings → Secrets and variables → Actions*:
+Hostinger's built-in Git deployment is wired directly to this repository — there
+is no build pipeline and no CI, because there is nothing to build.
 
-| Name | Kind | Value |
-|---|---|---|
-| `FTP_SERVER` | secret | Hostinger FTP hostname or IP |
-| `FTP_USERNAME` | secret | FTP account user |
-| `FTP_PASSWORD` | secret | FTP account password |
-| `FTP_SERVER_DIR` | variable | the subdomain's document root, trailing slash — e.g. `/public_html/feedback/` |
+*hPanel → Websites → the feedback subdomain → Advanced → GIT*, pointed at
+`https://github.com/Zahranko/AmalFeedback` on branch `main`, with the
+install path left as the subdomain's own document root.
 
-If you connect Hostinger's own Git deployment instead, no secrets are needed —
-it clones this repo into the document root directly. `index.html` is kept at the
-repo root so that route works too.
+Hostinger does **not** pull on its own. Either press *Deploy* in hPanel after a
+push, or make it automatic: copy the webhook URL hPanel shows under the
+repository, then add it in GitHub under *Settings → Webhooks* (content type
+`application/json`, the `push` event alone).
+
+Because the clone lands in the web root, everything committed here is publicly
+fetchable. `.htaccess` blocks the files meant for developers — `README.md` and
+anything under `.git` — so keep new repo furniture covered by it, or out of the
+repo.
+
+If the repository is private, hPanel shows an SSH public key when you connect
+it; add that under *Settings → Deploy keys* (read-only is enough).
 
 ## Local preview
 
