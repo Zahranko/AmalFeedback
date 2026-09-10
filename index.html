@@ -158,6 +158,14 @@ body{
 .row{display:flex;gap:12px}
 .row .field{flex:1;min-width:0}
 
+/* At half a phone's width the date input is genuinely cramped — the native
+   picker needs room for dd/mm/yyyy plus its own icon — and side by side the
+   tap after choosing a date lands past the department select rather than on
+   it. Stacked, the department field is simply the next thing down. */
+@media (max-width:560px){
+  .row.stack-sm{flex-direction:column;gap:0}
+}
+
 label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--ink)}
 label .req{color:var(--complaint)}
 
@@ -182,9 +190,74 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
 
 .phone-row{display:flex;gap:10px}
 /* Wider than the old read-only "+962" box: this now holds a country name as
-   well as the dial code, and the arrow eats 36px of it. Still narrow enough to
-   leave the number itself room at 360px. */
-.phone-row .code{width:148px;flex:none;font-weight:500;padding-inline-start:12px}
+   well as the dial code. Still narrow enough to leave the number room at 360px.
+   It is a button rather than a <select> — a native select of ~200 options is a
+   blind spinning wheel on iOS and an unsearchable wall on Android, so tapping
+   this opens the sheet below instead. */
+.phone-row .code{
+  width:148px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-weight:500;text-align:start;cursor:pointer;padding-inline:12px;
+}
+.phone-row .code .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phone-row .code::after{
+  content:"";flex:none;width:0;height:0;
+  border-inline:5px solid transparent;border-top:6px solid var(--ink-soft);
+}
+.phone-row .code[aria-expanded="true"]{
+  background:#fff;border-color:var(--sky);box-shadow:0 0 0 4px rgba(22,159,217,.14);
+}
+
+/* ---------- ورقة اختيار الدولة ---------- */
+/* A bottom sheet on phones (thumb-reachable, full-width rows) that becomes a
+   centred dialog on wider screens. */
+.cs-overlay{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(6,32,50,.55);animation:fade .18s var(--ease);
+}
+/* display:flex above is a class rule and outranks the user agent's
+   [hidden]{display:none}, so without this the sheet is visible on load. */
+.cs-overlay[hidden]{display:none}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.cs-panel{
+  background:#fff;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;animation:slideUp .22s var(--ease);
+}
+@keyframes slideUp{from{transform:translateY(20px)}to{transform:none}}
+.cs-head{display:flex;align-items:center;gap:10px;padding:15px 16px 11px}
+.cs-title{font-family:'Cairo',sans-serif;font-weight:700;font-size:15.5px;flex:1}
+.cs-close{
+  background:var(--field);border:none;border-radius:10px;width:34px;height:34px;flex:none;
+  font-size:16px;color:var(--ink-soft);cursor:pointer;font-family:inherit;line-height:1;
+}
+.cs-close:hover{background:#e2ebf1}
+.cs-search-wrap{padding:0 16px 11px}
+.cs-list{
+  list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;
+  padding:0 8px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);
+}
+.cs-group{
+  font-size:11.5px;font-weight:600;color:var(--ink-soft);
+  padding:13px 10px 6px;position:sticky;top:0;background:#fff;
+}
+.cs-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+  background:none;border:none;font-family:inherit;font-size:14.5px;color:var(--ink);
+  padding:12px 10px;border-radius:11px;cursor:pointer;text-align:start;min-height:46px;
+}
+.cs-item:hover{background:var(--sky-soft)}
+.cs-item:focus-visible{outline:2px solid var(--sky);outline-offset:-2px}
+.cs-item .dial{color:var(--ink-soft);font-size:13px;flex:none}
+.cs-item[aria-current="true"]{background:var(--sky-soft);color:var(--navy);font-weight:600}
+.cs-item[aria-current="true"] .dial{color:var(--navy)}
+.cs-empty{padding:26px 10px;text-align:center;color:var(--ink-soft);font-size:13px}
+
+/* The page behind must not scroll while the sheet is open. */
+body.sheet-open{overflow:hidden}
+
+@media (min-width:640px){
+  .cs-overlay{align-items:center;padding:24px}
+  .cs-panel{max-width:400px;max-height:70vh;border-radius:var(--radius-lg)}
+}
 
 /* حالة الخطأ */
 .inp.invalid{border-color:var(--danger);background:#fdf1f1}
@@ -433,7 +506,12 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
         <div class="field">
           <label for="phoneNumber">رقم الهاتف <span class="req">*</span></label>
           <div class="phone-row">
-            <select class="inp code" id="phoneCountryCode" aria-label="مفتاح الدولة"></select>
+            <button type="button" class="inp code" id="countryBtn"
+                    aria-haspopup="dialog" aria-expanded="false" aria-label="مفتاح الدولة">
+              <span class="name" id="countryLabel">الأردن</span>
+              <span class="dial" id="countryDial" dir="ltr">+962</span>
+            </button>
+            <input type="hidden" id="phoneCountryCode" value="+962">
             <input class="inp" id="phoneNumber" name="phoneNumber" type="tel"
                    placeholder="7X XXX XXXX" dir="ltr" inputmode="numeric"
                    autocomplete="tel-national" maxlength="15" required>
@@ -441,7 +519,7 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
           <p class="err" data-err-for="phoneNumber"></p>
         </div>
 
-        <div class="row">
+        <div class="row stack-sm">
           <div class="field">
             <label for="visitDate">التاريخ <span class="req">*</span></label>
             <input class="inp" id="visitDate" name="visitDate" type="date" required>
@@ -498,6 +576,22 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
   </div>
 </div>
 
+<!-- ===== ورقة اختيار مفتاح الدولة ===== -->
+<!-- Outside the form on purpose: nothing in here should ever be submitted. -->
+<div class="cs-overlay" id="countrySheet" hidden role="dialog" aria-modal="true" aria-label="اختر الدولة">
+  <div class="cs-panel">
+    <div class="cs-head">
+      <span class="cs-title">اختر الدولة</span>
+      <button type="button" class="cs-close" id="csClose" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="cs-search-wrap">
+      <input class="inp" id="csSearch" type="text" inputmode="search"
+             placeholder="ابحث باسم الدولة أو المفتاح" autocomplete="off">
+    </div>
+    <ul class="cs-list" id="csList"></ul>
+  </div>
+</div>
+
 <script>
 /* =========================================================
    نموذج آراء المرضى — نسخة مستقلّة تُستضاف على نطاق فرعي خاص
@@ -534,7 +628,14 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
   const detailsStar = document.getElementById('detailsStar');
   const visitDate = document.getElementById('visitDate');
   const phoneInput = document.getElementById('phoneNumber');
-  const countrySelect = document.getElementById('phoneCountryCode');
+  const countryValue = document.getElementById('phoneCountryCode');
+  const countryBtn = document.getElementById('countryBtn');
+  const countryLabel = document.getElementById('countryLabel');
+  const countryDial = document.getElementById('countryDial');
+  const countrySheet = document.getElementById('countrySheet');
+  const csList = document.getElementById('csList');
+  const csSearch = document.getElementById('csSearch');
+  const csClose = document.getElementById('csClose');
   const typeGroup = document.getElementById('typeGroup');
 
   /* ---------- التهيئة ---------- */
@@ -611,38 +712,132 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
 
   const DEFAULT_CODE = '+962';
 
-  function buildCountryList() {
-    const byCode = new Map(COUNTRIES.map(([name, code]) => [code, name]));
+  const byCode = new Map(COUNTRIES.map(([name, code]) => [code, name]));
+  const sortedCountries = [...COUNTRIES].sort((a, b) => a[0].localeCompare(b[0], 'ar'));
 
-    // U+200E (left-to-right mark) before the dial code: without it the leading
-    // "+" is a neutral character and bidi reordering renders "+962" as "962+"
-    // inside this right-to-left option text.
-    const option = (name, code) => {
-      const el = document.createElement('option');
-      el.value = code;
-      el.textContent = name + ' ‎' + code;
-      return el;
-    };
-
-    const common = document.createElement('optgroup');
-    common.label = 'الأكثر استخداماً';
-    for (const code of COMMON) common.appendChild(option(byCode.get(code), code));
-
-    const all = document.createElement('optgroup');
-    all.label = 'كل الدول';
-    for (const [name, code] of [...COUNTRIES].sort((a, b) => a[0].localeCompare(b[0], 'ar'))) {
-      all.appendChild(option(name, code));
-    }
-
-    countrySelect.append(common, all);
-    countrySelect.value = DEFAULT_CODE;
+  /** يوحّد الألف والهاء والياء ليطابق البحث ما يكتبه المستخدم فعلاً */
+  function normalizeAr(text) {
+    return text
+      .replace(/[إأآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .replace(/[ًٌٍَُِّْ]/g, '')
+      .trim();
   }
 
+  function setCountry(code) {
+    countryValue.value = code;
+    countryLabel.textContent = byCode.get(code) || '';
+    countryDial.textContent = code;
+  }
+
+  /** يعيد بناء القائمة: مجموعات عند عدم البحث، ونتائج مسطّحة عند البحث */
+  function renderCountryList(query) {
+    const q = normalizeAr(query.toLowerCase());
+    const digits = toLatinDigits(query).replace(/\D/g, '');
+    csList.textContent = '';
+
+    const item = (name, code) => {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cs-item';
+      btn.dataset.code = code;
+      if (code === countryValue.value) btn.setAttribute('aria-current', 'true');
+      const n = document.createElement('span');
+      n.textContent = name;
+      const d = document.createElement('span');
+      d.className = 'dial';
+      d.dir = 'ltr';
+      d.textContent = code;
+      btn.append(n, d);
+      li.appendChild(btn);
+      return li;
+    };
+
+    const heading = text => {
+      const li = document.createElement('li');
+      li.className = 'cs-group';
+      li.textContent = text;
+      return li;
+    };
+
+    if (!q && !digits) {
+      csList.appendChild(heading('الأكثر استخداماً'));
+      for (const code of COMMON) csList.appendChild(item(byCode.get(code), code));
+      csList.appendChild(heading('كل الدول'));
+      for (const [name, code] of sortedCountries) csList.appendChild(item(name, code));
+      return;
+    }
+
+    const matches = sortedCountries.filter(([name, code]) =>
+      (q && normalizeAr(name.toLowerCase()).includes(q)) ||
+      (digits && code.replace('+', '').startsWith(digits)));
+
+    if (!matches.length) {
+      const li = document.createElement('li');
+      li.className = 'cs-empty';
+      li.textContent = 'لا توجد نتائج';
+      csList.appendChild(li);
+      return;
+    }
+    for (const [name, code] of matches) csList.appendChild(item(name, code));
+  }
+
+  function openCountrySheet() {
+    csSearch.value = '';
+    renderCountryList('');
+    countrySheet.hidden = false;
+    document.body.classList.add('sheet-open');
+    countryBtn.setAttribute('aria-expanded', 'true');
+    // Deliberately not focusing the search box: on a phone that throws the
+    // keyboard up over the list, and most patients just tap one of the twelve
+    // at the top rather than type.
+    const current = csList.querySelector('[aria-current="true"]');
+    if (current) current.scrollIntoView({ block: 'center' });
+  }
+
+  function closeCountrySheet() {
+    countrySheet.hidden = true;
+    document.body.classList.remove('sheet-open');
+    countryBtn.setAttribute('aria-expanded', 'false');
+    countryBtn.focus({ preventScroll: true });
+  }
+
+  countryBtn.addEventListener('click', openCountrySheet);
+  csClose.addEventListener('click', closeCountrySheet);
+  csSearch.addEventListener('input', () => renderCountryList(csSearch.value));
+
+  // Enter in the search box takes the first match — the common case is typing
+  // two or three letters and confirming.
+  csSearch.addEventListener('keydown', event => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    const first = csList.querySelector('.cs-item');
+    if (first) first.click();
+  });
+
+  csList.addEventListener('click', event => {
+    const btn = event.target.closest('.cs-item');
+    if (!btn) return;
+    setCountry(btn.dataset.code);
+    closeCountrySheet();
+  });
+
+  // Tapping the dimmed backdrop closes; taps inside the panel must not.
+  countrySheet.addEventListener('click', event => {
+    if (event.target === countrySheet) closeCountrySheet();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !countrySheet.hidden) closeCountrySheet();
+  });
+
   // Below the COUNTRIES/COMMON/DEFAULT_CODE declarations on purpose: they are
-  // `const`, so calling buildCountryList() any earlier hits the temporal dead
-  // zone, and the throw would take the rest of this script — the department
-  // fetch and every event listener — down with it.
-  buildCountryList();
+  // `const`, so touching them any earlier hits the temporal dead zone, and the
+  // throw would take the rest of this script — the department fetch and every
+  // event listener — down with it.
+  setCountry(DEFAULT_CODE);
   loadDepartments();
 
   /* ---------- الأقسام من قاعدة البيانات ---------- */
@@ -816,7 +1011,7 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
       type: selectedType(),
       firstName: document.getElementById('firstName').value.trim(),
       lastName: document.getElementById('lastName').value.trim(),
-      phoneCountryCode: countrySelect.value,
+      phoneCountryCode: countryValue.value,
       phoneNumber: toLatinDigits(phoneInput.value).replace(/\D/g, ''),
       visitDate: visitDate.value,
       departmentId: Number(departmentSelect.value),
@@ -886,9 +1081,9 @@ input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity
     detailsStar.hidden = true;
     detailsInput.placeholder = 'اكتب رسالتك هنا بالتفصيل...';
     visitDate.value = iso(new Date());
-    // form.reset() restores the markup default, and the select has none — the
-    // options are built at runtime — so put Jordan back explicitly.
-    countrySelect.value = DEFAULT_CODE;
+    // form.reset() cannot restore this one: the picker lives outside the form
+    // and its value is held in a hidden input, so put Jordan back explicitly.
+    setCountry(DEFAULT_CODE);
     successView.hidden = true;
     form.hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });

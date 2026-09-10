@@ -11,9 +11,14 @@ diverged deliberately:
 - **Cairo throughout.** The original set IBM Plex Sans Arabic as the body face
   and used Cairo only for headings and buttons; Cairo is now the whole page and
   IBM Plex is no longer loaded.
-- **The country code is a dropdown**, ~198 countries with Arabic names, the
-  twelve most likely repeated in a group at the top. It was a read-only `+962`
-  box. The submitted `phoneCountryCode` follows the selection.
+- **The country code is a searchable picker**, ~198 countries with Arabic names,
+  the twelve most likely repeated in a group at the top. It was a read-only
+  `+962` box. Tapping it opens a bottom sheet (a centred dialog above 640px)
+  with a search field that matches either an Arabic name — normalising أ/إ/آ,
+  ة/ه and ى/ي so spelling variants still hit — or the dial code's digits. It is
+  deliberately not a `<select>`: ~200 options is a blind spinning wheel on iOS
+  and an unsearchable wall on Android. The submitted `phoneCountryCode` follows
+  the selection, and is held in a hidden input.
 - **No message type is preselected**, and one must be chosen. The original
   defaulted to *شكر وتقدير*, which meant a patient who never touched that row
   silently filed a thank-you.
