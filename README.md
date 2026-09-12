@@ -14,10 +14,26 @@ diverged deliberately:
 - **It is an app shell, not a scrolling document.** `<body>` is
   `position:fixed` and never scrolls; the header is pinned at the top, the
   submit button sits in a bar pinned at the bottom, and only the form between
-  them scrolls. The shell's height is `--app-h`, which JavaScript keeps equal
-  to `visualViewport.height` — so when the keyboard opens the form shrinks
-  instead of the focused field disappearing behind it, and the iOS address bar
-  can never collapse mid-scroll and shift the layout.
+  them scrolls. Because the body is fixed, the iOS address bar can never
+  collapse mid-scroll and shift the layout.
+- **The layout ignores the keyboard.** Three CSS variables, because the
+  keyboard has to mean three different things:
+  - `--app-h` is the shell's height and *never* reacts to the keyboard. The
+    header, form and submit bar hold still; the keyboard simply covers the
+    bottom of the page.
+  - `--vv-h` is `visualViewport.height` and is used **only** by the bottom
+    sheets, which do need to sit above the keyboard or their search field ends
+    up behind it.
+  - `--kb-h` is the difference, added as bottom padding to the scrolling
+    form. Without it there is not enough scroll range to lift the last field
+    out from behind the keyboard, no matter how far you scroll.
+
+  `interactive-widget=resizes-visual` in the viewport meta is what keeps the
+  layout viewport still on Android. Older browsers that resize the layout
+  viewport anyway are caught by a guard in `syncShell()`: a height-only shrink
+  is ignored while a field is focused (or was within the last 700ms — the
+  keyboard slides out over several frames, and a naive "did it shrink a lot"
+  ratio test gets defeated by the animation arriving in small steps).
 - **Zoom is off.** `user-scalable=no` covers Android; Safari has ignored it
   since iOS 10, so the script also swallows `gesturestart`/`gesturechange`,
   two-finger `touchmove`, double-tap, `Ctrl`+wheel and `Ctrl`+`+`/`-`/`0`.

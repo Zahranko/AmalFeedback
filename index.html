@@ -5,7 +5,10 @@
 <!-- الصفحة قشرة تطبيق لا مستنداً: تملأ الشاشة تماماً ولا تقبل التكبير.
      user-scalable=no يُحترم على أندرويد ويتجاهله Safari، لذا يسنده حارس
      القرص/النقر المزدوج في السكربت. -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- interactive-widget=resizes-visual: لوحة المفاتيح تقلّص المنطقة المرئية
+     وحدها وتترك نافذة التخطيط كما هي، فلا تتحرّك الصفحة عند فتحها. الافتراض
+     القديم على أندرويد كان resizes-content، وهو ما يجعل الواجهة كلها تقفز. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
 <meta name="theme-color" content="#08517d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,10 +50,17 @@
   /* أصغر مساحة لمس مريحة على الهاتف */
   --tap:52px;
 
-  /* ارتفاع القشرة: 100dvh مبدئياً، ثم يضبطه السكربت على ارتفاع
-     visualViewport حتى تنكمش الواجهة عند ظهور لوحة المفاتيح بدل أن
-     تختفي الحقول خلفها. */
+  /* ارتفاع القشرة. ثابت لا يتأثّر بلوحة المفاتيح: تفتح اللوحة فتغطّي أسفل
+     الشاشة، ولا يتحرّك ما تحتها. */
   --app-h:100dvh;
+
+  /* ارتفاع المنطقة المرئية فعلاً — ينكمش مع لوحة المفاتيح. للأوراق السفلية
+     وحدها، حتى ترتفع فوق اللوحة بدل أن يختفي حقل بحثها خلفها. */
+  --vv-h:100dvh;
+
+  /* ارتفاع لوحة المفاتيح نفسها (الفرق بين الاثنين)، ويُضاف إلى أسفل منطقة
+     التمرير كمساحة إضافية. */
+  --kb-h:0px;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -369,8 +379,10 @@ textarea.inp{resize:none;min-height:108px;line-height:1.7}
    ورقة تُسحب من الأسفل على الهاتف (في متناول الإبهام، وصفوفها بعرض الشاشة)،
    وتصير حواراً في وسط الشاشة فوق 640px.
    ========================================================= */
+/* ارتفاعها هو المنطقة المرئية لا الشاشة كاملة: مع align-items:flex-end تستقرّ
+   الورقة على حافة لوحة المفاتيح العليا بدل أن يختفي أسفلها خلفها. */
 .sh{
-  position:fixed;inset:0;z-index:60;
+  position:fixed;top:0;left:0;right:0;height:var(--vv-h);z-index:60;
   display:flex;align-items:flex-end;justify-content:center;
 }
 /* display:flex أعلاه قاعدة صنف تتقدّم على [hidden]{display:none} في متصفّح
@@ -382,10 +394,10 @@ textarea.inp{resize:none;min-height:108px;line-height:1.7}
 
 .sh-card{
   position:relative;background:#fff;width:100%;
-  /* مربوط بارتفاع القشرة نفسه، فتنكمش الورقة مع لوحة المفاتيح بدل أن
-     يختفي نصفها خلفها. والـ64px المتروكة فوقها ليست جمالاً: هي المساحة التي
-     يُنقر عليها للإغلاق، وبدونها تصير الورقة شاشة كاملة بلا مخرج ظاهر. */
-  max-height:calc(var(--app-h) - 64px);
+  /* مربوط بالمنطقة المرئية، فتنكمش الورقة مع لوحة المفاتيح بدل أن يختفي
+     نصفها خلفها. والـ64px المتروكة فوقها ليست جمالاً: هي المساحة التي يُنقر
+     عليها للإغلاق، وبدونها تصير الورقة شاشة كاملة بلا مخرج ظاهر. */
+  max-height:calc(var(--vv-h) - 64px);
   display:flex;flex-direction:column;overflow:hidden;
   border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   animation:slideUp .24s var(--ease);
@@ -588,6 +600,11 @@ textarea.inp{resize:none;min-height:108px;line-height:1.7}
   .sheet{padding:30px 52px}
   .actions{padding:18px 52px calc(20px + env(safe-area-inset-bottom))}
 }
+
+/* بعد كل الاستعلامات عمداً، فكلها تكتب padding مختصراً يمسح ما قبله.
+   المساحة الإضافية بقدر لوحة المفاتيح ضرورية لا تجميلية: بدونها لا يملك
+   النموذج مدى تمرير يكفي لرفع آخر حقل من خلف اللوحة، مهما مرّرناه. */
+.sheet{padding-bottom:calc(20px + var(--kb-h))}
 
 /* احترام تفضيل تقليل الحركة */
 @media (prefers-reduced-motion:reduce){
@@ -888,21 +905,91 @@ textarea.inp{resize:none;min-height:108px;line-height:1.7}
      القشرة: ملء الشاشة ومنع التكبير
      ========================================================= */
 
-  // ارتفاع الواجهة يتبع المنطقة المرئية فعلاً. الـ meta viewport وحده لا يكفي:
-  // عند فتح لوحة المفاتيح تبقى 100dvh كما هي وتختفي الحقول خلف اللوحة، بينما
-  // visualViewport ينكمش معها فينكمش النموذج ويظل الحقل المركَّز عليه ظاهراً.
+  // ارتفاعان لا واحد، لأن للوحة المفاتيح تأثيرين مختلفين مطلوبين:
+  //
+  // --app-h ارتفاع القشرة، ويتجاهل لوحة المفاتيح تماماً. لو تتبّع المنطقة
+  //   المرئية لانكمشت الترويسة والنموذج وشريط الإرسال دفعةً واحدة كلما لُمس
+  //   حقل، وقفزت الصفحة كلها مع كل فتح وإغلاق. تبقى ثابتة، واللوحة تغطّي
+  //   أسفلها فحسب.
+  // --vv-h ارتفاع المنطقة المرئية فعلاً، ولا تستعمله إلا الأوراق السفلية:
+  //   هي وحدها ما يجب أن يرتفع فوق لوحة المفاتيح، وإلا اختفى حقل البحث خلفها.
   const vv = window.visualViewport;
-  function syncHeight() {
-    const h = (vv ? vv.height : window.innerHeight) || window.innerHeight;
-    document.documentElement.style.setProperty('--app-h', h + 'px');
+  const root = document.documentElement;
+
+  let shellW = window.innerWidth;
+  let shellH = window.innerHeight;
+
+  function syncVisible() {
+    const visible = vv ? vv.height : window.innerHeight;
+    root.style.setProperty('--vv-h', visible + 'px');
+    root.style.setProperty('--kb-h', Math.max(0, shellH - visible) + 'px');
+    keepFocusVisible();
   }
+
+  /** يمرّر النموذج بأقلّ قدر يُخرج الحقل المركَّز عليه من خلف لوحة المفاتيح.
+      مؤجَّل لأن اللوحة تنزلق على دفعات: القياس أثناء الانزلاق يعطي مساحة
+      مرئية أكبر من الحقيقية، فيتوقّف التمرير قصيراً. */
+  let focusTimer = 0;
+  function keepFocusVisible() {
+    clearTimeout(focusTimer);
+    focusTimer = setTimeout(() => {
+      const el = document.activeElement;
+      if (!el || !scroller.contains(el)) return;
+      const visible = vv ? vv.height : window.innerHeight;
+      const rect = el.getBoundingClientRect();
+      const top = scroller.getBoundingClientRect().top;
+      const margin = 16;
+      if (rect.top < top + margin) {
+        scroller.scrollBy({ top: rect.top - top - margin, behavior: 'smooth' });
+      } else if (rect.bottom + margin > visible) {
+        scroller.scrollBy({ top: rect.bottom + margin - visible, behavior: 'smooth' });
+      }
+    }, 140);
+  }
+
+  const EDITABLE = 'input:not([type=hidden]):not([type=radio]),textarea,select';
+  const editable = el => !!(el && el.matches && el.matches(EDITABLE));
+  const typing = () => editable(document.activeElement);
+
+  // اللوحة لا تُغلق لحظة مغادرة الحقل، بل تنزلق. فلو نُقر زرّ منتقٍ والمؤشّر
+  // في حقل، مرّت لحظة لا حقل فيها ولوحة المفاتيح ما تزال قائمة — وفيها كانت
+  // القشرة تقفز ثم تعود. هذه المهلة تغطّي تلك اللحظة.
+  let lastTyped = 0;
+  document.addEventListener('focusin', e => { if (editable(e.target)) lastTyped = Date.now(); });
+  document.addEventListener('focusout', e => { if (editable(e.target)) lastTyped = Date.now(); });
+  const keyboardLikely = () => typing() || Date.now() - lastTyped < 700;
+
+  function syncShell(force) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // بعض المتصفّحات تقلّص نافذة التخطيط نفسها عند فتح لوحة المفاتيح. تجاهلها
+    // مشروط بأن يكون المؤشّر داخل حقل: هذا وحده ما يميّز لوحة مفاتيح عن تصغير
+    // نافذة حقيقي على الحاسوب. ولا تصلح مقارنة الارتفاع بنسبة من سابقه، لأن
+    // اللوحة تنزلق على دفعات صغيرة فتتسلّل تحت أي عتبة.
+    if (!force && w === shellW && h < shellH && keyboardLikely()) return;
+    shellW = w;
+    shellH = h;
+    root.style.setProperty('--app-h', h + 'px');
+  }
+
   if (vv) {
-    vv.addEventListener('resize', syncHeight);
-    vv.addEventListener('scroll', syncHeight);
+    vv.addEventListener('resize', syncVisible);
+    vv.addEventListener('scroll', syncVisible);
   }
-  window.addEventListener('resize', syncHeight);
-  window.addEventListener('orientationchange', () => setTimeout(syncHeight, 260));
-  syncHeight();
+  window.addEventListener('resize', () => { syncShell(false); syncVisible(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => {
+    syncShell(true);
+    syncVisible();
+  }, 260));
+
+  // بعد إغلاق لوحة المفاتيح: إعادة ضبط صريحة، فأي انكماش حدث أثناء الكتابة
+  // كان متجاهَلاً ولا بدّ من العودة إلى الارتفاع الحقيقي.
+  document.addEventListener('focusout', () => setTimeout(() => {
+    if (!typing()) { syncShell(true); syncVisible(); }
+  }, 900));
+
+  syncShell(true);
+  syncVisible();
 
   // منع التكبير. الـ meta يكفي على أندرويد؛ Safari على iOS يتجاهل
   // user-scalable=no منذ الإصدار 10، فتُمنع إيماءات القرص والنقر المزدوج يدوياً.
@@ -933,11 +1020,11 @@ textarea.inp{resize:none;min-height:108px;line-height:1.7}
   // الصفحة مثبّتة، فأي محاولة لتمريرها (بعد إغلاق لوحة المفاتيح مثلاً) تُردّ.
   window.addEventListener('scroll', () => window.scrollTo(0, 0));
 
-  // الحقل المركَّز عليه يُجلب إلى وسط منطقة التمرير بعد أن تستقرّ لوحة المفاتيح.
+  // القشرة لا تتحرّك مع لوحة المفاتيح، فقد يقع الحقل المركَّز عليه خلفها. تمرير
+  // المحتوى وحده هو ما يُظهره. يكفي هذا السطر للانتقال بين حقلين واللوحة مفتوحة
+  // أصلاً (لا يتغيّر عندها حجم المنطقة المرئية فلا يفيد حدث الـviewport).
   document.addEventListener('focusin', event => {
-    const el = event.target;
-    if (!scroller.contains(el)) return;
-    setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 320);
+    if (scroller.contains(event.target)) keepFocusVisible();
   });
 
   /* =========================================================
