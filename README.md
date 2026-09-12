@@ -28,15 +28,6 @@ diverged deliberately:
     form. Without it there is not enough scroll range to lift the last field
     out from behind the keyboard, no matter how far you scroll.
 
-  A small bar sits above the keyboard for the phone and details fields. It is
-  not decoration: iOS's numeric keypad has **no return key at all**, so
-  `enterkeyhint="next"` has nothing to label and no keypress to catch, and the
-  only way out of the phone field would be to tap another one. In the details
-  textarea the return key inserts a newline rather than advancing, so the bar
-  supplies the "done" there. Plain text fields keep their real return key and
-  get no bar. *التالي* from the phone field opens the date sheet, because
-  focusing a picker button and nothing else is invisible on a phone.
-
   `interactive-widget=resizes-visual` in the viewport meta is what keeps the
   layout viewport still on Android. Older browsers that resize the layout
   viewport anyway are caught by a guard in `syncShell()`: a height-only shrink
