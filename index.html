@@ -2,8 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- الصفحة قشرة تطبيق لا مستنداً: تملأ الشاشة تماماً ولا تقبل التكبير.
+     user-scalable=no يُحترم على أندرويد ويتجاهله Safari، لذا يسنده حارس
+     القرص/النقر المزدوج في السكربت. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#08517d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
 <meta name="robots" content="noindex">
 <meta name="description" content="شاركنا رأيك: شكر، اقتراح، أو شكوى — مستشفى الأمل">
 <title>آراء المرضى | مستشفى الأمل</title>
@@ -13,7 +20,8 @@
 <style>
 /* =========================================================
    مستشفى الأمل — نموذج آراء المرضى
-   مبني على الهاتف أولاً (mobile-first)، ويتوسّع إلى عمودين على الشاشات الكبيرة.
+   قشرة تطبيق: ترويسة ثابتة، نموذج يتمرّر وحده، وشريط إجراء أسفل الشاشة.
+   الصفحة نفسها لا تتمرّر ولا تُكبَّر — كل التمرير يحدث داخل ‎.sheet‎.
    ========================================================= */
 
 :root{
@@ -31,47 +39,69 @@
   --complaint:#e0794a;
   --danger:#d64545;
 
-  --radius-lg:28px;
+  --radius-lg:26px;
   --radius-md:18px;
-  --radius-sm:13px;
+  --radius-sm:14px;
   --ease:cubic-bezier(.4,.1,.2,1);
+
+  /* أصغر مساحة لمس مريحة على الهاتف */
+  --tap:52px;
+
+  /* ارتفاع القشرة: 100dvh مبدئياً، ثم يضبطه السكربت على ارتفاع
+     visualViewport حتى تنكمش الواجهة عند ظهور لوحة المفاتيح بدل أن
+     تختفي الحقول خلفها. */
+  --app-h:100dvh;
 }
 
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
-html{-webkit-text-size-adjust:100%}
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+  height:100%;
+}
 
+/* الجسم مثبّت: لا تمرير للصفحة، ولا ارتداد مطاطي على iOS، ولا شريط عنوان
+   يظهر ويختفي فيقفز التخطيط. */
 body{
-  /* Cairo throughout. The headings and buttons already asked for it by name;
-     this makes it the body face too, so IBM Plex Sans Arabic is no longer
-     loaded at all. */
   font-family:'Cairo',system-ui,-apple-system,'Segoe UI',sans-serif;
   background:var(--paper);
   color:var(--ink);
   line-height:1.6;
-  min-height:100dvh;
   -webkit-font-smoothing:antialiased;
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:manipulation;   /* يلغي تكبير النقر المزدوج وتأخير الـ300ms */
 }
 
 /* ---------- الهيكل ---------- */
-.stage{min-height:100dvh;display:flex}
+.stage{height:var(--app-h);display:flex;overflow:hidden}
 
 .device{
   flex:1;
+  min-width:0;
   display:flex;
   flex-direction:column;
+  min-height:0;
   background:var(--paper);
-  min-height:100dvh;
-  width:100%;
 }
 
+/* العمود الذي يحوي النموذج المتمرّر وشريط الإجراء */
+.pane{flex:1;min-height:0;display:flex;flex-direction:column}
+
 /* ---------- الترويسة ---------- */
+/* مضغوطة على الهاتف: ترويسة طويلة على شاشة بارتفاع 640px تأكل نصف المساحة. */
 .head{
+  flex:none;
   position:relative;
   background:linear-gradient(158deg,var(--sky) -10%,var(--navy) 55%,var(--navy-deep) 100%);
   color:#fff;
   text-align:center;
-  padding:calc(38px + env(safe-area-inset-top)) 26px 58px;
+  padding:calc(16px + env(safe-area-inset-top)) 22px 34px;
   overflow:hidden;
 }
 .head .glow{
@@ -81,66 +111,90 @@ body{
 }
 .head-top{position:relative;z-index:2}
 
-.logo{display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.logo{display:flex;align-items:center;justify-content:center;margin-bottom:10px}
 .logo .wm{display:block;text-align:center;line-height:1.15}
-.logo .wm .ar{display:block;font-family:'Cairo',sans-serif;font-weight:800;font-size:21px;letter-spacing:-.5px}
-.logo .wm .en{display:block;font-size:11px;letter-spacing:.16em;color:#bfe4f7;font-weight:500}
+.logo .wm .ar{display:block;font-weight:800;font-size:17px;letter-spacing:-.5px}
+.logo .wm .en{display:block;font-size:9.5px;letter-spacing:.16em;color:#bfe4f7;font-weight:500}
 
-.head h1{font-family:'Cairo',sans-serif;font-size:23px;font-weight:700;line-height:1.3}
+.head h1{font-size:21px;font-weight:700;line-height:1.3}
 .head .tag{
-  margin-top:7px;font-size:12.5px;color:#cfeafa;
+  margin-top:4px;font-size:12px;color:#cfeafa;
   display:inline-flex;align-items:center;gap:7px;
 }
 .head .tag::before,.head .tag::after{content:"";width:16px;height:1px;background:rgba(255,255,255,.4)}
-.head .lede{margin-top:14px;font-size:13px;color:#dcf0fb;max-width:290px;margin-inline:auto}
+.head .lede{margin-top:12px;font-size:13px;color:#dcf0fb;max-width:290px;margin-inline:auto}
+
+/* على الشاشات القصيرة تُحذف الجملة التعريفية لصالح الحقول. */
+@media (max-height:720px){
+  .head .lede{display:none}
+}
+@media (max-height:600px){
+  .head{padding:calc(10px + env(safe-area-inset-top)) 22px 26px}
+  .logo{margin-bottom:6px}
+  .logo .wm .en{display:none}
+  .head h1{font-size:18px}
+}
 
 /* ضمانات — للشاشات الكبيرة فقط */
 .assurances{display:none}
 
 /* القوس الذي يوصل الترويسة بالورقة */
 .arch{
-  position:absolute;bottom:-1px;left:0;right:0;height:34px;
+  position:absolute;bottom:-1px;left:0;right:0;height:26px;
   background:var(--paper);border-radius:50% 50% 0 0/100% 100% 0 0;
 }
 
-/* ---------- الورقة ---------- */
+/* ---------- منطقة التمرير ---------- */
 .sheet{
   flex:1;
-  padding:6px 22px calc(30px + env(safe-area-inset-bottom));
-  background:var(--paper);
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;      /* لا يجرّ ما خلفه عند بلوغ الطرف */
+  -webkit-overflow-scrolling:touch;
+  padding:2px 18px 20px;
+  scrollbar-width:thin;
 }
+.sheet::-webkit-scrollbar{width:6px}
+.sheet::-webkit-scrollbar-thumb{background:#cfdde7;border-radius:3px}
 
 .kicker{
   font-size:12px;font-weight:600;color:var(--ink-soft);
-  margin:22px 4px 12px;display:flex;align-items:center;gap:8px;
+  margin:18px 2px 10px;display:flex;align-items:center;gap:8px;
 }
+.kicker:first-child{margin-top:14px}
 .kicker::after{content:"";flex:1;height:1px;background:var(--line)}
 
 /* ---------- بطاقات نوع الرسالة ---------- */
-.types{display:flex;flex-direction:column;gap:10px}
+.types{display:flex;flex-direction:column;gap:9px}
 .type{
-  cursor:pointer;position:relative;display:flex;align-items:center;gap:14px;
+  cursor:pointer;position:relative;display:flex;align-items:center;gap:13px;
   border:1.5px solid var(--line);border-radius:var(--radius-md);
-  padding:15px 16px;background:#fff;transition:.18s var(--ease);
+  padding:12px 14px;background:#fff;min-height:66px;
+  transition:border-color .18s var(--ease),background .18s var(--ease),transform .12s var(--ease);
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
 }
 .type input{position:absolute;opacity:0;pointer-events:none}
 .type .ic{
   width:42px;height:42px;border-radius:var(--radius-sm);flex:none;
-  display:grid;place-items:center;font-size:20px;background:var(--field);transition:.18s var(--ease);
+  display:grid;place-items:center;font-size:20px;background:var(--field);
+  transition:.18s var(--ease);
 }
-.type .txt{display:block}
+.type .txt{display:block;min-width:0}
 .type .txt strong{display:block;font-size:15.5px;font-weight:600}
 .type .txt small{display:block;font-size:12px;color:var(--ink-soft);line-height:1.4}
 .type .tick{
-  margin-inline-start:auto;width:22px;height:22px;border-radius:50%;
+  margin-inline-start:auto;width:24px;height:24px;border-radius:50%;
   border:2px solid var(--line);flex:none;display:grid;place-items:center;
   color:#fff;font-size:12px;transition:.18s var(--ease);
 }
-.type:hover{transform:translateX(-3px)}
+/* الإزاحة عند المرور للفأرة وحدها — على اللمس كانت تبقى بعد رفع الإصبع. */
+@media (hover:hover) and (pointer:fine){
+  .type:hover{transform:translateX(-3px)}
+}
+.type:active{transform:scale(.985)}
 .type:has(input:focus-visible){outline:2px solid var(--sky);outline-offset:3px}
 
-/* Nothing is preselected any more, so the group needs an invalid state of its
-   own — the per-field .inp.invalid rule has no element to attach to here. */
+/* لا شيء مختار مسبقاً، فللمجموعة حالة خطأ خاصة بها. */
 .types.invalid .type{border-color:var(--danger)}
 
 .type.thanks:has(:checked){border-color:var(--thanks);background:#e9f7f4}
@@ -154,137 +208,111 @@ body{
 .type.complaint:has(:checked) .tick{background:var(--complaint);border-color:var(--complaint)}
 
 /* ---------- الحقول ---------- */
-.field{margin-bottom:16px}
+.field{margin-bottom:14px}
 .row{display:flex;gap:12px}
 .row .field{flex:1;min-width:0}
 
-/* At half a phone's width the date input is genuinely cramped — the native
-   picker needs room for dd/mm/yyyy plus its own icon — and side by side the
-   tap after choosing a date lands past the department select rather than on
-   it. Stacked, the department field is simply the next thing down. */
-@media (max-width:560px){
+/* حقلا الاسم متجاوران يتركان ~150px لكل واحد على هاتف 360px — ضيّق على اسم
+   عربي كامل، والتمرير الرأسي رخيص هنا. */
+@media (max-width:520px){
   .row.stack-sm{flex-direction:column;gap:0}
 }
 
-label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--ink)}
-label .req{color:var(--complaint)}
+label,.lbl{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink)}
+label .req,.lbl .req{color:var(--complaint)}
 
+/* 16px ليست خياراً جمالياً: أي حقل أصغر يجعل Safari على iPhone يكبّر الصفحة
+   تلقائياً عند التركيز، وهو تكبير لا يزول بإغلاق لوحة المفاتيح. */
 .inp{
-  width:100%;font-family:inherit;font-size:14.5px;color:var(--ink);
+  width:100%;font-family:inherit;font-size:16px;color:var(--ink);
   background:var(--field);border:1.5px solid transparent;border-radius:var(--radius-sm);
-  padding:13px 14px;transition:.18s var(--ease);
+  padding:13px 14px;min-height:var(--tap);
+  transition:border-color .18s var(--ease),background .18s var(--ease),box-shadow .18s var(--ease);
 }
-.inp::placeholder{color:#9fb3c2}
+.inp::placeholder{color:#9fb3c2;opacity:1}
 .inp:focus{outline:none;background:#fff;border-color:var(--sky);box-shadow:0 0 0 4px rgba(22,159,217,.14)}
 .inp:disabled{opacity:.6;cursor:not-allowed}
 
-textarea.inp{resize:none;min-height:104px;line-height:1.7}
+textarea.inp{resize:none;min-height:108px;line-height:1.7}
 
-select.inp{
-  appearance:none;cursor:pointer;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%236a8398' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:left 15px center;padding-left:36px;
+/* ---------- زر منتقٍ يفتح ورقة ---------- */
+/* كل قائمة أصلية في هذه الصفحة صارت زراً يفتح ورقة سفلية: ‎<select>‎ على iOS
+   عجلة دوّارة عمياء، و‎<input type="date">‎ يختلف شكله وصيغته من جهاز لآخر —
+   وكلاهما لا يُبحث فيه. */
+.picker{
+  width:100%;display:flex;align-items:center;gap:10px;
+  font-family:inherit;font-size:16px;color:var(--ink);text-align:start;
+  background:var(--field);border:1.5px solid transparent;border-radius:var(--radius-sm);
+  min-height:var(--tap);padding:0 14px;cursor:pointer;
+  transition:border-color .18s var(--ease),background .18s var(--ease),box-shadow .18s var(--ease);
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;
 }
-input[type="date"].inp{min-height:48px}
-input[type="date"].inp::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.55}
+.picker .val{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picker .val.ph{color:#9fb3c2}
+.picker .lead{flex:none;font-size:17px;line-height:1;opacity:.75}
+.picker .dial{flex:none;color:var(--ink-soft);font-size:14.5px;font-weight:500}
+.picker::after{
+  content:"";flex:none;width:8px;height:8px;margin-inline-start:2px;
+  /* حدود فيزيائية لا منطقية: border-inline-start ينقلب في RTL فيصير السهم
+     مشيراً إلى الجهة الخطأ. */
+  border:2px solid var(--ink-soft);border-top:0;border-left:0;
+  transform:rotate(45deg) translate(-2px,-2px);
+}
+.picker:active{background:#e5eef4}
+.picker:focus-visible{outline:none;background:#fff;border-color:var(--sky);box-shadow:0 0 0 4px rgba(22,159,217,.14)}
+.picker[aria-expanded="true"]{background:#fff;border-color:var(--sky);box-shadow:0 0 0 4px rgba(22,159,217,.14)}
+.picker:disabled{opacity:.6;cursor:progress}
 
 .phone-row{display:flex;gap:10px}
-/* Wider than the old read-only "+962" box: this now holds a country name as
-   well as the dial code. Still narrow enough to leave the number room at 360px.
-   It is a button rather than a <select> — a native select of ~200 options is a
-   blind spinning wheel on iOS and an unsearchable wall on Android, so tapping
-   this opens the sheet below instead. */
-.phone-row .code{
-  width:148px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;
-  font-weight:500;text-align:start;cursor:pointer;padding-inline:12px;
-}
-.phone-row .code .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.phone-row .code::after{
-  content:"";flex:none;width:0;height:0;
-  border-inline:5px solid transparent;border-top:6px solid var(--ink-soft);
-}
-.phone-row .code[aria-expanded="true"]{
-  background:#fff;border-color:var(--sky);box-shadow:0 0 0 4px rgba(22,159,217,.14);
-}
-
-/* ---------- ورقة اختيار الدولة ---------- */
-/* A bottom sheet on phones (thumb-reachable, full-width rows) that becomes a
-   centred dialog on wider screens. */
-.cs-overlay{
-  position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;
-  background:rgba(6,32,50,.55);animation:fade .18s var(--ease);
-}
-/* display:flex above is a class rule and outranks the user agent's
-   [hidden]{display:none}, so without this the sheet is visible on load. */
-.cs-overlay[hidden]{display:none}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-.cs-panel{
-  background:#fff;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;
-  border-radius:var(--radius-lg) var(--radius-lg) 0 0;animation:slideUp .22s var(--ease);
-}
-@keyframes slideUp{from{transform:translateY(20px)}to{transform:none}}
-.cs-head{display:flex;align-items:center;gap:10px;padding:15px 16px 11px}
-.cs-title{font-family:'Cairo',sans-serif;font-weight:700;font-size:15.5px;flex:1}
-.cs-close{
-  background:var(--field);border:none;border-radius:10px;width:34px;height:34px;flex:none;
-  font-size:16px;color:var(--ink-soft);cursor:pointer;font-family:inherit;line-height:1;
-}
-.cs-close:hover{background:#e2ebf1}
-.cs-search-wrap{padding:0 16px 11px}
-.cs-list{
-  list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;
-  padding:0 8px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);
-}
-.cs-group{
-  font-size:11.5px;font-weight:600;color:var(--ink-soft);
-  padding:13px 10px 6px;position:sticky;top:0;background:#fff;
-}
-.cs-item{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
-  background:none;border:none;font-family:inherit;font-size:14.5px;color:var(--ink);
-  padding:12px 10px;border-radius:11px;cursor:pointer;text-align:start;min-height:46px;
-}
-.cs-item:hover{background:var(--sky-soft)}
-.cs-item:focus-visible{outline:2px solid var(--sky);outline-offset:-2px}
-.cs-item .dial{color:var(--ink-soft);font-size:13px;flex:none}
-.cs-item[aria-current="true"]{background:var(--sky-soft);color:var(--navy);font-weight:600}
-.cs-item[aria-current="true"] .dial{color:var(--navy)}
-.cs-empty{padding:26px 10px;text-align:center;color:var(--ink-soft);font-size:13px}
-
-/* The page behind must not scroll while the sheet is open. */
-body.sheet-open{overflow:hidden}
-
-@media (min-width:640px){
-  .cs-overlay{align-items:center;padding:24px}
-  .cs-panel{max-width:400px;max-height:70vh;border-radius:var(--radius-lg)}
-}
+/* يتّسع لاسم دولة قصير مع المفتاح، ويبقي للرقم مساحة كافية عند 360px. */
+.phone-row .code{width:134px;flex:none;padding-inline:11px;gap:6px}
+.phone-row .code .val{font-size:14.5px}
+.phone-row .num{flex:1;min-width:0}
 
 /* حالة الخطأ */
-.inp.invalid{border-color:var(--danger);background:#fdf1f1}
+.inp.invalid,.picker.invalid{border-color:var(--danger);background:#fdf1f1}
 .inp.invalid:focus{box-shadow:0 0 0 4px rgba(214,69,69,.14)}
-.err{font-size:11.5px;color:var(--danger);margin-top:6px;min-height:0}
+.err{font-size:11.5px;color:var(--danger);margin-top:6px}
 .err:empty{display:none}
 
-.under{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.under{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .counter{font-size:11px;color:var(--ink-soft);margin-top:6px;margin-inline-start:auto;flex:none}
 
 .form-error{
   background:#fdf1f1;border:1px solid #f5d4d4;color:#a83232;
-  border-radius:var(--radius-sm);padding:11px 14px;font-size:13px;margin-bottom:14px;
+  border-radius:var(--radius-sm);padding:11px 14px;font-size:13px;margin:4px 0 12px;
 }
 
-/* ---------- الزر ---------- */
-.submit{
-  width:100%;margin-top:6px;position:relative;
-  background:linear-gradient(135deg,var(--sky),var(--navy));
-  color:#fff;border:none;border-radius:16px;padding:16px;
-  font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;
-  transition:.2s var(--ease);
-  box-shadow:0 14px 26px -12px rgba(8,81,125,.75);
-  display:flex;align-items:center;justify-content:center;gap:10px;
+.foot{
+  margin-top:14px;text-align:center;font-size:11.5px;color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:center;gap:6px;
 }
-.submit:hover:not(:disabled){transform:translateY(-2px)}
-.submit:active:not(:disabled){transform:translateY(0)}
+
+/* ---------- شريط الإجراء السفلي ---------- */
+/* الزر خارج منطقة التمرير: على نموذج بهذا الطول يبقى «إرسال» تحت الإبهام
+   بدل أن يُبحث عنه في آخر الصفحة. */
+.actions{
+  flex:none;
+  background:#fff;
+  border-top:1px solid var(--line);
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom));
+  box-shadow:0 -14px 28px -24px rgba(8,48,71,.7);
+}
+
+.submit{
+  width:100%;position:relative;
+  background:linear-gradient(135deg,var(--sky),var(--navy));
+  color:#fff;border:none;border-radius:16px;padding:15px;min-height:var(--tap);
+  font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;
+  transition:transform .18s var(--ease),opacity .18s var(--ease);
+  box-shadow:0 12px 24px -14px rgba(8,81,125,.85);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  touch-action:manipulation;
+}
+@media (hover:hover) and (pointer:fine){
+  .submit:hover:not(:disabled){transform:translateY(-2px)}
+}
+.submit:active:not(:disabled){transform:scale(.99)}
 .submit:disabled{opacity:.75;cursor:progress}
 .submit .spinner{
   display:none;width:17px;height:17px;border-radius:50%;
@@ -292,56 +320,177 @@ body.sheet-open{overflow:hidden}
   animation:spin .7s linear infinite;
 }
 .submit.loading .spinner{display:block}
+/* display:flex أعلاه قاعدة صنف تتقدّم على [hidden]{display:none} في متصفّح
+   المستخدم، فبدون هذا السطر يظهر زر الإرسال بجانب «إرسال رسالة أخرى». */
+.submit[hidden]{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.foot{
-  margin-top:16px;text-align:center;font-size:11.5px;color:var(--ink-soft);
-  display:flex;align-items:center;justify-content:center;gap:6px;
+.ghost{
+  width:100%;background:transparent;border:1.5px solid var(--line);color:var(--navy);
+  border-radius:16px;padding:14px;min-height:var(--tap);
+  font-family:inherit;font-size:16px;font-weight:700;
+  cursor:pointer;transition:.18s var(--ease);touch-action:manipulation;
 }
+.ghost:active{background:var(--sky-soft)}
 
 /* ---------- شاشة النجاح ---------- */
 .done{
-  text-align:center;padding:34px 6px 24px;
+  text-align:center;padding:26px 4px 20px;
   animation:rise .4s var(--ease);
 }
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
 .done-ring{
-  width:82px;height:82px;margin:0 auto 20px;border-radius:50%;
+  width:78px;height:78px;margin:0 auto 18px;border-radius:50%;
   background:linear-gradient(135deg,#25c2a8,var(--thanks));
-  display:grid;place-items:center;color:#fff;font-size:38px;font-weight:700;
+  display:grid;place-items:center;color:#fff;font-size:36px;font-weight:700;
   box-shadow:0 16px 32px -14px rgba(21,159,138,.8);
 }
-.done h2{font-family:'Cairo',sans-serif;font-size:21px;margin-bottom:8px}
-.done > p{font-size:13.5px;color:var(--ink-soft);max-width:330px;margin:0 auto 22px}
+.done h2{font-size:21px;margin-bottom:8px}
+.done > p{font-size:13.5px;color:var(--ink-soft);max-width:330px;margin:0 auto 20px}
 
 .ref-card{
   background:#fff;border:1.5px dashed var(--line);border-radius:var(--radius-md);
-  padding:18px;margin-bottom:20px;
+  padding:18px;margin-bottom:8px;
 }
 .ref-label{display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:8px}
-.ref-value{display:flex;align-items:center;justify-content:center;gap:10px}
-.ref-value strong{
-  font-family:'Cairo',sans-serif;font-size:24px;letter-spacing:2px;
-  color:var(--navy);direction:ltr;
-}
+.ref-value{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.ref-value strong{font-size:24px;letter-spacing:2px;color:var(--navy);direction:ltr}
 .copy{
-  background:var(--sky-soft);color:var(--navy);border:none;border-radius:9px;
-  padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
-  transition:.15s var(--ease);
+  background:var(--sky-soft);color:var(--navy);border:none;border-radius:10px;
+  padding:9px 14px;min-height:40px;font-family:inherit;font-size:13px;font-weight:600;
+  cursor:pointer;transition:.15s var(--ease);touch-action:manipulation;
 }
-.copy:hover{background:#d3ebf8}
+.copy:active{background:#c9e6f7}
 .ref-hint{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:10px}
 
-.ghost{
-  width:100%;background:transparent;border:1.5px solid var(--line);color:var(--navy);
-  border-radius:16px;padding:14px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;
-  cursor:pointer;transition:.18s var(--ease);
+/* =========================================================
+   الأوراق السفلية — مكوّن واحد يخدم الدولة والقسم والتاريخ
+   ورقة تُسحب من الأسفل على الهاتف (في متناول الإبهام، وصفوفها بعرض الشاشة)،
+   وتصير حواراً في وسط الشاشة فوق 640px.
+   ========================================================= */
+.sh{
+  position:fixed;inset:0;z-index:60;
+  display:flex;align-items:flex-end;justify-content:center;
 }
-.ghost:hover{background:#fff;border-color:var(--sky);color:var(--sky)}
+/* display:flex أعلاه قاعدة صنف تتقدّم على [hidden]{display:none} في متصفّح
+   المستخدم، فبدون هذا السطر تظهر الورقة عند التحميل. */
+.sh[hidden]{display:none}
+
+.sh-scrim{position:absolute;inset:0;background:rgba(6,32,50,.55);animation:fade .18s var(--ease)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+.sh-card{
+  position:relative;background:#fff;width:100%;
+  /* مربوط بارتفاع القشرة نفسه، فتنكمش الورقة مع لوحة المفاتيح بدل أن
+     يختفي نصفها خلفها. والـ64px المتروكة فوقها ليست جمالاً: هي المساحة التي
+     يُنقر عليها للإغلاق، وبدونها تصير الورقة شاشة كاملة بلا مخرج ظاهر. */
+  max-height:calc(var(--app-h) - 64px);
+  display:flex;flex-direction:column;overflow:hidden;
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  animation:slideUp .24s var(--ease);
+  box-shadow:0 -18px 50px -20px rgba(6,32,50,.5);
+}
+@keyframes slideUp{from{transform:translateY(28px);opacity:.6}to{transform:none;opacity:1}}
+
+/* مقبض السحب: إشارة بصرية أن هذه ورقة تُغلق بسحبها للأسفل. */
+.sh-grab{
+  width:42px;height:4px;border-radius:2px;background:#d7e3ec;
+  margin:9px auto 2px;flex:none;
+}
+.sh-head{display:flex;align-items:center;gap:10px;padding:8px 14px 10px;flex:none}
+.sh-title{font-weight:700;font-size:16px;flex:1;min-width:0}
+.sh-close{
+  background:var(--field);border:none;border-radius:12px;
+  width:40px;height:40px;flex:none;
+  font-size:16px;color:var(--ink-soft);cursor:pointer;font-family:inherit;line-height:1;
+  touch-action:manipulation;
+}
+.sh-close:active{background:#e2ebf1}
+.sh-search{padding:0 14px 10px;flex:none}
+
+.sh-body{
+  overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  flex:1;min-height:0;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);
+}
+
+/* ---------- قائمة خيارات داخل ورقة ---------- */
+.opts{list-style:none;padding:0 8px}
+.opt-group{
+  font-size:11.5px;font-weight:600;color:var(--ink-soft);
+  padding:13px 10px 6px;position:sticky;top:0;background:#fff;z-index:1;
+}
+.opt{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+  background:none;border:none;font-family:inherit;font-size:16px;color:var(--ink);
+  padding:12px 10px;border-radius:12px;cursor:pointer;text-align:start;
+  min-height:var(--tap);touch-action:manipulation;
+}
+.opt:active{background:var(--sky-soft)}
+.opt:focus-visible{outline:2px solid var(--sky);outline-offset:-2px}
+.opt .dial{color:var(--ink-soft);font-size:14px;flex:none}
+.opt[aria-current="true"]{background:var(--sky-soft);color:var(--navy);font-weight:600}
+.opt[aria-current="true"] .dial{color:var(--navy)}
+.opt[aria-current="true"]::after{content:"✓";flex:none;color:var(--sky);font-weight:700}
+.opt-empty{padding:26px 10px;text-align:center;color:var(--ink-soft);font-size:14px}
+
+/* ---------- التقويم ---------- */
+/* بديل ‎<input type="date">‎: شبكة أيام بعناوين عربية، ومداها محدود بين
+   سنتين مضتا واليوم، فلا يستطيع المريض اختيار تاريخ يرفضه الخادم أصلاً. */
+.cal{padding:12px 14px 6px}
+
+.cal-quick{display:flex;gap:8px;margin-bottom:12px}
+.cal-quick button{
+  flex:1;background:var(--field);border:1.5px solid transparent;border-radius:12px;
+  font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);
+  min-height:44px;cursor:pointer;touch-action:manipulation;
+}
+.cal-quick button:active{background:#e0eaf1}
+.cal-quick button.on{background:var(--sky-soft);border-color:var(--sky);color:var(--navy)}
+
+.cal-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cal-step{
+  width:44px;height:44px;flex:none;background:var(--field);border:none;border-radius:12px;
+  display:grid;place-items:center;cursor:pointer;touch-action:manipulation;
+}
+.cal-step:disabled{opacity:.35;cursor:default}
+.cal-step:active:not(:disabled){background:#e0eaf1}
+.cal-step i{
+  width:9px;height:9px;border:2px solid var(--ink-soft);
+  border-top:0;border-left:0;display:block;
+}
+/* «السابق» يشير يميناً و«التالي» يساراً — الاتجاه المعكوس في واجهة عربية. */
+.cal-step.prev i{transform:rotate(-45deg) translate(-1px,1px)}
+.cal-step.next i{transform:rotate(135deg) translate(-1px,1px)}
+
+.cal-when{flex:1;display:flex;gap:8px;min-width:0}
+.cal-when select{
+  /* 16px هنا أيضاً: iOS يكبّر عند التركيز على ‎<select>‎ الأصغر من ذلك، تماماً
+     كما يفعل مع حقول النص. */
+  flex:1;min-width:0;font-family:inherit;font-size:16px;font-weight:600;color:var(--ink);
+  background:var(--field);border:none;border-radius:12px;height:44px;padding:0 10px;
+  text-align:center;text-align-last:center;cursor:pointer;appearance:none;
+}
+
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-dow span{text-align:center;font-size:11px;color:var(--ink-soft);font-weight:600}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{height:44px}
+.cal-day{
+  width:100%;height:100%;border:none;background:none;border-radius:12px;
+  font-family:inherit;font-size:15px;color:var(--ink);cursor:pointer;
+  touch-action:manipulation;
+}
+.cal-day:active:not(:disabled){background:var(--field)}
+.cal-day:disabled{color:#c3d2dc;cursor:default}
+.cal-day.today{box-shadow:inset 0 0 0 1.5px var(--sky);font-weight:700;color:var(--navy)}
+.cal-day.on{background:var(--navy);color:#fff;font-weight:700;box-shadow:none}
 
 /* =========================================================
-   لوحي — نبدأ بإظهار بطاقة على خلفية داكنة
+   لوحي — بطاقة على خلفية داكنة
    ========================================================= */
 @media (min-width:640px){
   body{
@@ -349,16 +498,32 @@ body.sheet-open{overflow:hidden}
       radial-gradient(700px 380px at 82% -6%,#0f6ba0 0%,transparent 60%),
       radial-gradient(600px 320px at -5% 105%,#073d5f 0%,transparent 55%),
       #05283d;
-    background-attachment:fixed;
   }
-  .stage{align-items:center;justify-content:center;padding:32px 24px}
+  .stage{align-items:center;justify-content:center;padding:28px 24px}
   .device{
-    min-height:0;width:min(560px,100%);
+    flex:none;
+    width:min(560px,100%);
+    height:min(100%,860px);
     border-radius:var(--radius-lg);overflow:hidden;
     box-shadow:0 44px 90px -34px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06);
   }
-  .head{padding:46px 34px 62px}
-  .sheet{padding:10px 34px 36px}
+  .head{padding:34px 34px 42px}
+  .logo{margin-bottom:16px}
+  .logo .wm .ar{font-size:20px}
+  .logo .wm .en{display:block;font-size:10.5px}
+  .head h1{font-size:25px}
+  .head .lede{display:block}
+  .sheet{padding:6px 32px 26px}
+  .actions{padding:14px 32px}
+
+  /* الورقة تصير حواراً في الوسط */
+  .sh{align-items:center;padding:24px}
+  .sh-card{
+    max-width:420px;max-height:min(76vh,640px);
+    border-radius:var(--radius-lg);
+  }
+  .sh-grab{display:none}
+  .sh-head{padding:15px 16px 11px}
 }
 
 /* =========================================================
@@ -368,6 +533,7 @@ body.sheet-open{overflow:hidden}
   .stage{padding:40px}
   .device{
     width:min(1060px,100%);
+    height:min(100%,760px);
     display:grid;
     grid-template-columns:minmax(320px,.85fr) 1.15fr;
     align-items:stretch;
@@ -375,10 +541,10 @@ body.sheet-open{overflow:hidden}
 
   .head{
     display:flex;flex-direction:column;justify-content:space-between;
-    text-align:start;padding:52px 40px;
+    text-align:start;padding:48px 40px;overflow-y:auto;
   }
   .head .glow{width:320px;height:320px;top:-100px;left:-90px}
-  .logo{justify-content:flex-start;margin-bottom:34px}
+  .logo{justify-content:flex-start;margin-bottom:30px}
   .logo .wm{text-align:start}
   .logo .wm .ar{font-size:23px}
   .head h1{font-size:30px}
@@ -388,7 +554,7 @@ body.sheet-open{overflow:hidden}
 
   .assurances{
     display:flex;flex-direction:column;gap:16px;
-    list-style:none;margin-top:44px;position:relative;z-index:2;
+    list-style:none;margin-top:40px;position:relative;z-index:2;
   }
   .assurances li{display:flex;align-items:flex-start;gap:12px;font-size:12.5px;color:#cfeafa}
   .assurances .ai{
@@ -399,31 +565,35 @@ body.sheet-open{overflow:hidden}
 
   /* القوس يصبح رأسياً على الحافة الداخلية للترويسة */
   .arch{
-    inset:0 auto 0 -1px;width:32px;height:auto;
+    inset:0 auto 0 -1px;width:30px;height:auto;
     border-radius:0 50% 50% 0/0 100% 100% 0;
   }
 
-  .sheet{padding:44px 46px;display:flex;flex-direction:column;justify-content:center}
-  .kicker:first-child{margin-top:0}
+  .pane{min-height:0}
+  .sheet{padding:26px 40px}
+  .actions{padding:16px 40px calc(18px + env(safe-area-inset-bottom))}
   .types{flex-direction:row}
-  .types .type{flex:1;flex-direction:column;align-items:flex-start;gap:10px;padding:16px 15px}
-  .types .type .tick{position:absolute;top:14px;inset-inline-end:14px;margin:0}
+  .types .type{flex:1;flex-direction:column;align-items:flex-start;gap:9px;padding:14px 13px;min-height:0}
+  .types .type .tick{position:absolute;top:12px;inset-inline-end:12px;margin:0}
   .types .type .txt strong{font-size:14.5px}
-  .type:hover{transform:translateY(-3px)}
-  .done{padding:20px 0}
+  @media (hover:hover) and (pointer:fine){
+    .type:hover{transform:translateY(-3px)}
+  }
+  .done{padding:14px 0}
 }
 
 /* شاشات كبيرة جداً */
 @media (min-width:1400px){
-  .device{width:min(1160px,100%)}
-  .sheet{padding:52px 60px}
+  .device{width:min(1160px,100%);height:min(100%,800px)}
+  .sheet{padding:30px 52px}
+  .actions{padding:18px 52px calc(20px + env(safe-area-inset-bottom))}
 }
 
 /* احترام تفضيل تقليل الحركة */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
-  .type:hover{transform:none}
-  .submit:hover:not(:disabled){transform:none}
+  .type:hover,.submit:hover:not(:disabled){transform:none}
+  .sheet{scroll-behavior:auto}
 }
 </style>
 </head>
@@ -459,136 +629,197 @@ body.sheet-open{overflow:hidden}
       <span class="arch" aria-hidden="true"></span>
     </header>
 
-    <!-- ===== النموذج ===== -->
-    <main class="sheet">
-      <form id="feedbackForm" class="form" novalidate>
+    <!-- ===== النموذج: منطقة تمرير + شريط إجراء ثابت ===== -->
+    <div class="pane">
 
-        <div class="kicker">نوع الرسالة <span class="req">*</span></div>
-        <div class="types" id="typeGroup" role="radiogroup" aria-label="نوع الرسالة">
-          <label class="type thanks">
-            <input type="radio" name="type" value="Thanks">
-            <span class="ic" aria-hidden="true">💙</span>
-            <span class="txt"><strong>شكر وتقدير</strong><small>لتجربة أسعدتك</small></span>
-            <span class="tick" aria-hidden="true">✓</span>
-          </label>
-          <label class="type suggest">
-            <input type="radio" name="type" value="Suggestion">
-            <span class="ic" aria-hidden="true">💡</span>
-            <span class="txt"><strong>اقتراح</strong><small>فكرة لتحسين الخدمة</small></span>
-            <span class="tick" aria-hidden="true">✓</span>
-          </label>
-          <label class="type complaint">
-            <input type="radio" name="type" value="Complaint">
-            <span class="ic" aria-hidden="true">📋</span>
-            <span class="txt"><strong>شكوى</strong><small>أمر يحتاج معالجة</small></span>
-            <span class="tick" aria-hidden="true">✓</span>
-          </label>
-        </div>
-        <p class="err" data-err-for="type"></p>
+      <main class="sheet" id="scroller">
+        <form id="feedbackForm" class="form" novalidate>
 
-        <div class="kicker">بياناتك</div>
-
-        <div class="row">
-          <div class="field">
-            <label for="firstName">الاسم الأول <span class="req">*</span></label>
-            <input class="inp" id="firstName" name="firstName" type="text"
-                   placeholder="سارة" autocomplete="given-name" maxlength="60" required>
-            <p class="err" data-err-for="firstName"></p>
+          <div class="kicker">نوع الرسالة <span class="req">*</span></div>
+          <div class="types" id="typeGroup" role="radiogroup" aria-label="نوع الرسالة">
+            <label class="type thanks">
+              <input type="radio" name="type" value="Thanks">
+              <span class="ic" aria-hidden="true">💙</span>
+              <span class="txt"><strong>شكر وتقدير</strong><small>لتجربة أسعدتك</small></span>
+              <span class="tick" aria-hidden="true">✓</span>
+            </label>
+            <label class="type suggest">
+              <input type="radio" name="type" value="Suggestion">
+              <span class="ic" aria-hidden="true">💡</span>
+              <span class="txt"><strong>اقتراح</strong><small>فكرة لتحسين الخدمة</small></span>
+              <span class="tick" aria-hidden="true">✓</span>
+            </label>
+            <label class="type complaint">
+              <input type="radio" name="type" value="Complaint">
+              <span class="ic" aria-hidden="true">📋</span>
+              <span class="txt"><strong>شكوى</strong><small>أمر يحتاج معالجة</small></span>
+              <span class="tick" aria-hidden="true">✓</span>
+            </label>
           </div>
-          <div class="field">
-            <label for="lastName">اسم العائلة <span class="req">*</span></label>
-            <input class="inp" id="lastName" name="lastName" type="text"
-                   placeholder="الأحمد" autocomplete="family-name" maxlength="60" required>
-            <p class="err" data-err-for="lastName"></p>
-          </div>
-        </div>
+          <p class="err" data-err-for="type"></p>
 
-        <div class="field">
-          <label for="phoneNumber">رقم الهاتف <span class="req">*</span></label>
-          <div class="phone-row">
-            <button type="button" class="inp code" id="countryBtn"
-                    aria-haspopup="dialog" aria-expanded="false" aria-label="مفتاح الدولة">
-              <span class="name" id="countryLabel">الأردن</span>
-              <span class="dial" id="countryDial" dir="ltr">+962</span>
+          <div class="kicker">بياناتك</div>
+
+          <div class="row stack-sm">
+            <div class="field">
+              <label for="firstName">الاسم الأول <span class="req">*</span></label>
+              <input class="inp" id="firstName" name="firstName" type="text"
+                     placeholder="سارة" autocomplete="given-name" autocapitalize="words"
+                     enterkeyhint="next" maxlength="60" required>
+              <p class="err" data-err-for="firstName"></p>
+            </div>
+            <div class="field">
+              <label for="lastName">اسم العائلة <span class="req">*</span></label>
+              <input class="inp" id="lastName" name="lastName" type="text"
+                     placeholder="الأحمد" autocomplete="family-name" autocapitalize="words"
+                     enterkeyhint="next" maxlength="60" required>
+              <p class="err" data-err-for="lastName"></p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="phoneNumber">رقم الهاتف <span class="req">*</span></label>
+            <div class="phone-row">
+              <button type="button" class="picker code" id="countryBtn"
+                      aria-haspopup="dialog" aria-expanded="false" aria-label="مفتاح الدولة">
+                <span class="val" id="countryLabel">الأردن</span>
+                <span class="dial" id="countryDial" dir="ltr">+962</span>
+              </button>
+              <input type="hidden" id="phoneCountryCode" value="+962">
+              <input class="inp num" id="phoneNumber" name="phoneNumber" type="tel"
+                     placeholder="7X XXX XXXX" dir="ltr" inputmode="tel"
+                     autocomplete="tel-national" enterkeyhint="next" maxlength="15" required>
+            </div>
+            <p class="err" data-err-for="phoneNumber"></p>
+          </div>
+
+          <div class="field">
+            <span class="lbl" id="visitDateLbl">تاريخ الزيارة <span class="req">*</span></span>
+            <button type="button" class="picker" id="visitDateBtn"
+                    aria-haspopup="dialog" aria-expanded="false" aria-labelledby="visitDateLbl visitDateText">
+              <span class="lead" aria-hidden="true">🗓️</span>
+              <span class="val" id="visitDateText">اختر التاريخ</span>
             </button>
-            <input type="hidden" id="phoneCountryCode" value="+962">
-            <input class="inp" id="phoneNumber" name="phoneNumber" type="tel"
-                   placeholder="7X XXX XXXX" dir="ltr" inputmode="numeric"
-                   autocomplete="tel-national" maxlength="15" required>
-          </div>
-          <p class="err" data-err-for="phoneNumber"></p>
-        </div>
-
-        <div class="row stack-sm">
-          <div class="field">
-            <label for="visitDate">التاريخ <span class="req">*</span></label>
-            <input class="inp" id="visitDate" name="visitDate" type="date" required>
+            <input type="hidden" id="visitDate" name="visitDate">
             <p class="err" data-err-for="visitDate"></p>
           </div>
+
           <div class="field">
-            <label for="departmentId">القسم <span class="req">*</span></label>
-            <select class="inp" id="departmentId" name="departmentId" required>
-              <option value="" selected disabled>اختر</option>
-            </select>
+            <span class="lbl" id="departmentLbl">القسم <span class="req">*</span></span>
+            <button type="button" class="picker" id="departmentBtn"
+                    aria-haspopup="dialog" aria-expanded="false" aria-labelledby="departmentLbl departmentText">
+              <span class="lead" aria-hidden="true">🏥</span>
+              <span class="val ph" id="departmentText">جارٍ تحميل الأقسام…</span>
+            </button>
+            <input type="hidden" id="departmentId" name="departmentId">
             <p class="err" data-err-for="departmentId"></p>
           </div>
-        </div>
 
-        <div class="field">
-          <label for="details">تفاصيل إضافية <span class="req optional-star" id="detailsStar" hidden>*</span></label>
-          <textarea class="inp" id="details" name="details" maxlength="2000"
-                    placeholder="اكتب رسالتك هنا بالتفصيل..."></textarea>
-          <div class="under">
-            <p class="err" data-err-for="details"></p>
-            <span class="counter"><span id="detailsCount">0</span>/2000</span>
+          <div class="field">
+            <label for="details">تفاصيل إضافية <span class="req optional-star" id="detailsStar" hidden>*</span></label>
+            <textarea class="inp" id="details" name="details" maxlength="2000"
+                      enterkeyhint="done"
+                      placeholder="اكتب رسالتك هنا بالتفصيل..."></textarea>
+            <div class="under">
+              <p class="err" data-err-for="details"></p>
+              <span class="counter"><span id="detailsCount">0</span>/2000</span>
+            </div>
           </div>
-        </div>
 
-        <p class="form-error" id="formError" role="alert" hidden></p>
+          <p class="form-error" id="formError" role="alert" hidden></p>
 
-        <button class="submit" type="submit" id="submitBtn">
+          <div class="foot">🔒 بياناتك سرّية وتُستخدم لمعالجة طلبك فقط</div>
+        </form>
+
+        <!-- ===== شاشة النجاح ===== -->
+        <section class="done" id="successView" hidden aria-live="polite">
+          <div class="done-ring"><span>✓</span></div>
+          <h2>وصلتنا رسالتك</h2>
+          <p>شكراً لثقتك بنا. فريق تجربة المريض سيطّلع على رسالتك.</p>
+
+          <div class="ref-card">
+            <span class="ref-label">الرقم المرجعي</span>
+            <div class="ref-value">
+              <strong id="refNumber">—</strong>
+              <button type="button" class="copy" id="copyRef" aria-label="نسخ الرقم المرجعي">نسخ</button>
+            </div>
+            <span class="ref-hint">احتفظ بهذا الرقم لمتابعة رسالتك</span>
+          </div>
+        </section>
+      </main>
+
+      <!-- الأزرار خارج منطقة التمرير حتى تبقى في متناول الإبهام دائماً.
+           زر الإرسال مرتبط بالنموذج عبر form= لأنه لم يعد بداخله. -->
+      <div class="actions">
+        <button class="submit" type="submit" id="submitBtn" form="feedbackForm">
           <span class="label">إرسال الرسالة</span>
           <span class="spinner" aria-hidden="true"></span>
         </button>
+        <button type="button" class="ghost" id="againBtn" hidden>إرسال رسالة أخرى</button>
+      </div>
 
-        <div class="foot">🔒 بياناتك سرّية وتُستخدم لمعالجة طلبك فقط</div>
-      </form>
-
-      <!-- ===== شاشة النجاح ===== -->
-      <section class="done" id="successView" hidden aria-live="polite">
-        <div class="done-ring"><span>✓</span></div>
-        <h2>وصلتنا رسالتك</h2>
-        <p>شكراً لثقتك بنا. فريق تجربة المريض سيطّلع على رسالتك.</p>
-
-        <div class="ref-card">
-          <span class="ref-label">الرقم المرجعي</span>
-          <div class="ref-value">
-            <strong id="refNumber">—</strong>
-            <button type="button" class="copy" id="copyRef" aria-label="نسخ الرقم المرجعي">نسخ</button>
-          </div>
-          <span class="ref-hint">احتفظ بهذا الرقم لمتابعة رسالتك</span>
-        </div>
-
-        <button type="button" class="ghost" id="againBtn">إرسال رسالة أخرى</button>
-      </section>
-    </main>
-
+    </div>
   </div>
 </div>
 
-<!-- ===== ورقة اختيار مفتاح الدولة ===== -->
-<!-- Outside the form on purpose: nothing in here should ever be submitted. -->
-<div class="cs-overlay" id="countrySheet" hidden role="dialog" aria-modal="true" aria-label="اختر الدولة">
-  <div class="cs-panel">
-    <div class="cs-head">
-      <span class="cs-title">اختر الدولة</span>
-      <button type="button" class="cs-close" id="csClose" aria-label="إغلاق">✕</button>
+<!-- ===== الأوراق السفلية ===== -->
+<!-- خارج النموذج عمداً: لا شيء هنا يُرسل مع البيانات. -->
+
+<div class="sh" id="countrySheet" hidden>
+  <div class="sh-scrim" data-close></div>
+  <div class="sh-card" role="dialog" aria-modal="true" aria-label="اختر الدولة">
+    <span class="sh-grab" aria-hidden="true"></span>
+    <div class="sh-head">
+      <span class="sh-title">اختر الدولة</span>
+      <button type="button" class="sh-close" data-close aria-label="إغلاق">✕</button>
     </div>
-    <div class="cs-search-wrap">
-      <input class="inp" id="csSearch" type="text" inputmode="search"
+    <div class="sh-search">
+      <input class="inp" id="csSearch" type="text" inputmode="search" enterkeyhint="search"
              placeholder="ابحث باسم الدولة أو المفتاح" autocomplete="off">
     </div>
-    <ul class="cs-list" id="csList"></ul>
+    <div class="sh-body"><ul class="opts" id="csList"></ul></div>
+  </div>
+</div>
+
+<div class="sh" id="deptSheet" hidden>
+  <div class="sh-scrim" data-close></div>
+  <div class="sh-card" role="dialog" aria-modal="true" aria-label="اختر القسم">
+    <span class="sh-grab" aria-hidden="true"></span>
+    <div class="sh-head">
+      <span class="sh-title">اختر القسم</span>
+      <button type="button" class="sh-close" data-close aria-label="إغلاق">✕</button>
+    </div>
+    <div class="sh-search" id="deptSearchWrap" hidden>
+      <input class="inp" id="deptSearch" type="text" inputmode="search" enterkeyhint="search"
+             placeholder="ابحث عن القسم" autocomplete="off">
+    </div>
+    <div class="sh-body"><ul class="opts" id="deptList"></ul></div>
+  </div>
+</div>
+
+<div class="sh" id="dateSheet" hidden>
+  <div class="sh-scrim" data-close></div>
+  <div class="sh-card" role="dialog" aria-modal="true" aria-label="اختر تاريخ الزيارة">
+    <span class="sh-grab" aria-hidden="true"></span>
+    <div class="sh-head">
+      <span class="sh-title">تاريخ الزيارة</span>
+      <button type="button" class="sh-close" data-close aria-label="إغلاق">✕</button>
+    </div>
+    <div class="sh-body">
+      <div class="cal">
+        <div class="cal-quick" id="calQuick"></div>
+        <div class="cal-nav">
+          <button type="button" class="cal-step prev" id="calPrev" aria-label="الشهر السابق"><i aria-hidden="true"></i></button>
+          <div class="cal-when">
+            <select id="calMonth" aria-label="الشهر"></select>
+            <select id="calYear" aria-label="السنة"></select>
+          </div>
+          <button type="button" class="cal-step next" id="calNext" aria-label="الشهر التالي"><i aria-hidden="true"></i></button>
+        </div>
+        <div class="cal-dow" id="calDow" aria-hidden="true"></div>
+        <div class="cal-grid" id="calGrid" role="grid" aria-label="أيام الشهر"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -618,37 +849,332 @@ body.sheet-open{overflow:hidden}
     feedback: API_BASE + '/api/public/feedback'
   };
 
-  const form = document.getElementById('feedbackForm');
-  const successView = document.getElementById('successView');
-  const submitBtn = document.getElementById('submitBtn');
-  const formError = document.getElementById('formError');
-  const departmentSelect = document.getElementById('departmentId');
-  const detailsInput = document.getElementById('details');
-  const detailsCount = document.getElementById('detailsCount');
-  const detailsStar = document.getElementById('detailsStar');
-  const visitDate = document.getElementById('visitDate');
-  const phoneInput = document.getElementById('phoneNumber');
-  const countryValue = document.getElementById('phoneCountryCode');
-  const countryBtn = document.getElementById('countryBtn');
-  const countryLabel = document.getElementById('countryLabel');
-  const countryDial = document.getElementById('countryDial');
-  const countrySheet = document.getElementById('countrySheet');
-  const csList = document.getElementById('csList');
-  const csSearch = document.getElementById('csSearch');
-  const csClose = document.getElementById('csClose');
-  const typeGroup = document.getElementById('typeGroup');
+  const $ = id => document.getElementById(id);
 
-  /* ---------- التهيئة ---------- */
+  const form = $('feedbackForm');
+  const scroller = $('scroller');
+  const successView = $('successView');
+  const submitBtn = $('submitBtn');
+  const againBtn = $('againBtn');
+  const formError = $('formError');
+  const detailsInput = $('details');
+  const detailsCount = $('detailsCount');
+  const detailsStar = $('detailsStar');
+  const phoneInput = $('phoneNumber');
+  const typeGroup = $('typeGroup');
 
-  // التاريخ: لا يتجاوز اليوم، ولا يسبق سنتين
-  const today = new Date();
-  const iso = d => d.toISOString().slice(0, 10);
-  const twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
-  visitDate.max = iso(today);
-  visitDate.min = iso(twoYearsAgo);
-  visitDate.value = iso(today);
+  const countryValue = $('phoneCountryCode');
+  const countryBtn = $('countryBtn');
+  const countryLabel = $('countryLabel');
+  const countryDial = $('countryDial');
+  const countrySheet = $('countrySheet');
+  const csList = $('csList');
+  const csSearch = $('csSearch');
 
-  /* ---------- مفاتيح الدول ---------- */
+  const visitDate = $('visitDate');
+  const visitDateBtn = $('visitDateBtn');
+  const visitDateText = $('visitDateText');
+  const dateSheet = $('dateSheet');
+
+  const departmentValue = $('departmentId');
+  const departmentBtn = $('departmentBtn');
+  const departmentText = $('departmentText');
+  const deptSheet = $('deptSheet');
+  const deptList = $('deptList');
+  const deptSearch = $('deptSearch');
+  const deptSearchWrap = $('deptSearchWrap');
+
+  /* =========================================================
+     القشرة: ملء الشاشة ومنع التكبير
+     ========================================================= */
+
+  // ارتفاع الواجهة يتبع المنطقة المرئية فعلاً. الـ meta viewport وحده لا يكفي:
+  // عند فتح لوحة المفاتيح تبقى 100dvh كما هي وتختفي الحقول خلف اللوحة، بينما
+  // visualViewport ينكمش معها فينكمش النموذج ويظل الحقل المركَّز عليه ظاهراً.
+  const vv = window.visualViewport;
+  function syncHeight() {
+    const h = (vv ? vv.height : window.innerHeight) || window.innerHeight;
+    document.documentElement.style.setProperty('--app-h', h + 'px');
+  }
+  if (vv) {
+    vv.addEventListener('resize', syncHeight);
+    vv.addEventListener('scroll', syncHeight);
+  }
+  window.addEventListener('resize', syncHeight);
+  window.addEventListener('orientationchange', () => setTimeout(syncHeight, 260));
+  syncHeight();
+
+  // منع التكبير. الـ meta يكفي على أندرويد؛ Safari على iOS يتجاهل
+  // user-scalable=no منذ الإصدار 10، فتُمنع إيماءات القرص والنقر المزدوج يدوياً.
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+    document.addEventListener(type, e => e.preventDefault(), { passive: false });
+  });
+
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length > 1) e.preventDefault();   // قرص بإصبعين
+  }, { passive: false });
+
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 320) e.preventDefault();   // نقر مزدوج
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  // وعلى الحاسوب: قرص لوحة اللمس (وهو Ctrl+wheel) واختصارات + − 0.
+  document.addEventListener('wheel', e => {
+    if (e.ctrlKey) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '_', '0'].includes(e.key)) e.preventDefault();
+  });
+
+  // الصفحة مثبّتة، فأي محاولة لتمريرها (بعد إغلاق لوحة المفاتيح مثلاً) تُردّ.
+  window.addEventListener('scroll', () => window.scrollTo(0, 0));
+
+  // الحقل المركَّز عليه يُجلب إلى وسط منطقة التمرير بعد أن تستقرّ لوحة المفاتيح.
+  document.addEventListener('focusin', event => {
+    const el = event.target;
+    if (!scroller.contains(el)) return;
+    setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 320);
+  });
+
+  /* =========================================================
+     الأوراق السفلية — محرّك واحد لثلاث أوراق
+     ========================================================= */
+
+  let activeSheet = null;
+  let sheetTrigger = null;
+
+  function openSheet(sheet, trigger) {
+    if (activeSheet) closeSheet();
+    activeSheet = sheet;
+    sheetTrigger = trigger || null;
+    sheet.hidden = false;
+    if (sheetTrigger) sheetTrigger.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeSheet() {
+    if (!activeSheet) return;
+    const sheet = activeSheet;
+    const trigger = sheetTrigger;
+    activeSheet = null;
+    sheetTrigger = null;
+    sheet.hidden = true;
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.focus({ preventScroll: true });
+    }
+  }
+
+  /** سحب الورقة للأسفل يغلقها — المقبض والترويسة فقط، فلو التقطنا الورقة كلها
+      لتعارك السحب مع تمرير القائمة بداخلها. */
+  function enableDragToClose(sheet) {
+    const card = sheet.querySelector('.sh-card');
+    const zones = [sheet.querySelector('.sh-grab'), sheet.querySelector('.sh-head')].filter(Boolean);
+    let startY = 0, delta = 0, dragging = false;
+
+    const start = e => { dragging = true; delta = 0; startY = e.touches[0].clientY; card.style.transition = 'none'; };
+    const move = e => {
+      if (!dragging) return;
+      delta = Math.max(0, e.touches[0].clientY - startY);
+      card.style.transform = 'translateY(' + delta + 'px)';
+    };
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      card.style.transition = '';
+      card.style.transform = '';
+      if (delta > 90) closeSheet();
+    };
+
+    zones.forEach(zone => {
+      zone.addEventListener('touchstart', start, { passive: true });
+      zone.addEventListener('touchmove', move, { passive: true });
+      zone.addEventListener('touchend', end);
+      zone.addEventListener('touchcancel', end);
+    });
+  }
+
+  document.querySelectorAll('.sh').forEach(sheet => {
+    sheet.addEventListener('click', event => {
+      if (event.target.closest('[data-close]')) closeSheet();
+    });
+    enableDragToClose(sheet);
+  });
+
+  document.addEventListener('keydown', event => {
+    if (!activeSheet) return;
+    if (event.key === 'Escape') { event.preventDefault(); closeSheet(); return; }
+    if (event.key !== 'Tab') return;
+
+    // حبس التنقّل داخل الورقة ما دامت مفتوحة.
+    const focusable = [...activeSheet.querySelectorAll('button:not([disabled]),input,select')]
+      .filter(el => el.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!activeSheet.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+    else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+
+  /* =========================================================
+     التواريخ
+     ========================================================= */
+
+  const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                     'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+  const DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  const DAYS_SHORT = ['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+
+  const pad = n => (n < 10 ? '0' : '') + n;
+
+  // محلي لا UTC. toISOString كان يعيد يوم أمس لأي زيارة تُسجَّل قبل الثالثة
+  // فجراً بتوقيت عمّان (‎+03‎)، فيرفضها التحقّق أو تُحفظ بيوم خاطئ.
+  const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const fromIso = s => { const p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); };
+
+  const TODAY = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const MAX_DATE = TODAY;
+  const MIN_DATE = new Date(TODAY.getFullYear() - 2, TODAY.getMonth(), TODAY.getDate());
+  const MAX_ISO = iso(MAX_DATE);
+  const MIN_ISO = iso(MIN_DATE);
+
+  const daysAgo = n => new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate() - n);
+
+  function setVisitDate(value) {
+    visitDate.value = value || '';
+    if (value) {
+      const d = fromIso(value);
+      visitDateText.textContent = DAYS_AR[d.getDay()] + '، ' + d.getDate() + ' ' + MONTHS_AR[d.getMonth()] + ' ' + d.getFullYear();
+      visitDateText.classList.remove('ph');
+    } else {
+      visitDateText.textContent = 'اختر التاريخ';
+      visitDateText.classList.add('ph');
+    }
+    clearError('visitDate');
+  }
+
+  /* ---------- التقويم ---------- */
+
+  const calQuick = $('calQuick');
+  const calPrev = $('calPrev');
+  const calNext = $('calNext');
+  const calMonth = $('calMonth');
+  const calYear = $('calYear');
+  const calDow = $('calDow');
+  const calGrid = $('calGrid');
+
+  let view = { y: TODAY.getFullYear(), m: TODAY.getMonth() };
+
+  // عناوين الأيام. الشبكة سبعة أعمدة داخل dir="rtl"، فأول عمود هو الأيمن
+  // ويقابل الأحد — نفس ترتيب getDay().
+  DAYS_SHORT.forEach(name => {
+    const span = document.createElement('span');
+    span.textContent = name;
+    calDow.appendChild(span);
+  });
+
+  for (let y = MIN_DATE.getFullYear(); y <= MAX_DATE.getFullYear(); y++) {
+    const opt = document.createElement('option');
+    opt.value = String(y);
+    opt.textContent = String(y);
+    calYear.appendChild(opt);
+  }
+
+  const inRange = d => iso(d) >= MIN_ISO && iso(d) <= MAX_ISO;
+
+  function renderQuick() {
+    calQuick.textContent = '';
+    [['اليوم', 0], ['أمس', 1], ['قبل يومين', 2]].forEach(([label, offset]) => {
+      const d = daysAgo(offset);
+      if (!inRange(d)) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      if (visitDate.value === iso(d)) btn.className = 'on';
+      btn.addEventListener('click', () => { setVisitDate(iso(d)); closeSheet(); });
+      calQuick.appendChild(btn);
+    });
+  }
+
+  function renderCalendar() {
+    // الشهور المتاحة تختلف باختلاف السنة عند طرفَي المدى.
+    calMonth.textContent = '';
+    MONTHS_AR.forEach((name, index) => {
+      const first = new Date(view.y, index, 1);
+      const last = new Date(view.y, index + 1, 0);
+      if (iso(last) < MIN_ISO || iso(first) > MAX_ISO) return;
+      const opt = document.createElement('option');
+      opt.value = String(index);
+      opt.textContent = name;
+      calMonth.appendChild(opt);
+    });
+    calMonth.value = String(view.m);
+    calYear.value = String(view.y);
+
+    const firstOfMonth = new Date(view.y, view.m, 1);
+    const lastOfMonth = new Date(view.y, view.m + 1, 0);
+    calPrev.disabled = iso(new Date(view.y, view.m, 0)) < MIN_ISO;
+    calNext.disabled = iso(new Date(view.y, view.m + 1, 1)) > MAX_ISO;
+
+    calGrid.textContent = '';
+    for (let blank = 0; blank < firstOfMonth.getDay(); blank++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      calGrid.appendChild(cell);
+    }
+
+    for (let day = 1; day <= lastOfMonth.getDate(); day++) {
+      const date = new Date(view.y, view.m, day);
+      const value = iso(date);
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cal-day';
+      btn.textContent = String(day);
+      btn.disabled = value < MIN_ISO || value > MAX_ISO;
+      if (value === iso(TODAY)) btn.classList.add('today');
+      if (value === visitDate.value) { btn.classList.add('on'); btn.setAttribute('aria-current', 'date'); }
+      btn.setAttribute('aria-label', DAYS_AR[date.getDay()] + ' ' + day + ' ' + MONTHS_AR[view.m] + ' ' + view.y);
+      if (!btn.disabled) {
+        btn.addEventListener('click', () => { setVisitDate(value); closeSheet(); });
+      }
+      cell.appendChild(btn);
+      calGrid.appendChild(cell);
+    }
+  }
+
+  function stepMonth(delta) {
+    const next = new Date(view.y, view.m + delta, 1);
+    view = { y: next.getFullYear(), m: next.getMonth() };
+    renderCalendar();
+  }
+
+  calPrev.addEventListener('click', () => stepMonth(-1));
+  calNext.addEventListener('click', () => stepMonth(1));
+  calMonth.addEventListener('change', () => { view.m = Number(calMonth.value); renderCalendar(); });
+  calYear.addEventListener('change', () => {
+    view.y = Number(calYear.value);
+    // قد يقع الشهر الحالي خارج المدى في سنة الطرف، فيُزحزح إلى أقرب شهر صالح.
+    if (iso(new Date(view.y, view.m + 1, 0)) < MIN_ISO) view.m = MIN_DATE.getMonth();
+    if (iso(new Date(view.y, view.m, 1)) > MAX_ISO) view.m = MAX_DATE.getMonth();
+    renderCalendar();
+  });
+
+  visitDateBtn.addEventListener('click', () => {
+    const anchor = visitDate.value ? fromIso(visitDate.value) : TODAY;
+    view = { y: anchor.getFullYear(), m: anchor.getMonth() };
+    renderQuick();
+    renderCalendar();
+    openSheet(dateSheet, visitDateBtn);
+  });
+
+  setVisitDate(iso(TODAY));
 
   // [الاسم بالعربية, المفتاح]. The API stores this in a 6-character column, so
   // every value here has to stay within that — the longest below is 5 ("+1868").
@@ -731,42 +1257,61 @@ body.sheet-open{overflow:hidden}
     countryDial.textContent = code;
   }
 
-  /** يعيد بناء القائمة: مجموعات عند عدم البحث، ونتائج مسطّحة عند البحث */
+  /** صف في قائمة ورقة: زر بعرض الورقة كاملاً، لا خيار في عجلة دوّارة */
+  function optionRow(label, dial, selected, onPick) {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'opt';
+    if (selected) btn.setAttribute('aria-current', 'true');
+
+    const name = document.createElement('span');
+    name.textContent = label;
+    btn.appendChild(name);
+
+    if (dial) {
+      const d = document.createElement('span');
+      d.className = 'dial';
+      d.dir = 'ltr';
+      d.textContent = dial;
+      btn.appendChild(d);
+    }
+
+    btn.addEventListener('click', onPick);
+    li.appendChild(btn);
+    return li;
+  }
+
+  function listHeading(text) {
+    const li = document.createElement('li');
+    li.className = 'opt-group';
+    li.textContent = text;
+    return li;
+  }
+
+  function listEmpty(text) {
+    const li = document.createElement('li');
+    li.className = 'opt-empty';
+    li.textContent = text;
+    return li;
+  }
+
+  /** يعيد بناء قائمة الدول: مجموعات عند عدم البحث، ونتائج مسطّحة عند البحث */
   function renderCountryList(query) {
     const q = normalizeAr(query.toLowerCase());
     const digits = toLatinDigits(query).replace(/\D/g, '');
     csList.textContent = '';
 
-    const item = (name, code) => {
-      const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'cs-item';
-      btn.dataset.code = code;
-      if (code === countryValue.value) btn.setAttribute('aria-current', 'true');
-      const n = document.createElement('span');
-      n.textContent = name;
-      const d = document.createElement('span');
-      d.className = 'dial';
-      d.dir = 'ltr';
-      d.textContent = code;
-      btn.append(n, d);
-      li.appendChild(btn);
-      return li;
-    };
-
-    const heading = text => {
-      const li = document.createElement('li');
-      li.className = 'cs-group';
-      li.textContent = text;
-      return li;
-    };
+    const row = (name, code) => optionRow(name, code, code === countryValue.value, () => {
+      setCountry(code);
+      closeSheet();
+    });
 
     if (!q && !digits) {
-      csList.appendChild(heading('الأكثر استخداماً'));
-      for (const code of COMMON) csList.appendChild(item(byCode.get(code), code));
-      csList.appendChild(heading('كل الدول'));
-      for (const [name, code] of sortedCountries) csList.appendChild(item(name, code));
+      csList.appendChild(listHeading('الأكثر استخداماً'));
+      for (const code of COMMON) csList.appendChild(row(byCode.get(code), code));
+      csList.appendChild(listHeading('كل الدول'));
+      for (const [name, code] of sortedCountries) csList.appendChild(row(name, code));
       return;
     }
 
@@ -775,74 +1320,92 @@ body.sheet-open{overflow:hidden}
       (digits && code.replace('+', '').startsWith(digits)));
 
     if (!matches.length) {
-      const li = document.createElement('li');
-      li.className = 'cs-empty';
-      li.textContent = 'لا توجد نتائج';
-      csList.appendChild(li);
+      csList.appendChild(listEmpty('لا توجد نتائج'));
       return;
     }
-    for (const [name, code] of matches) csList.appendChild(item(name, code));
+    for (const [name, code] of matches) csList.appendChild(row(name, code));
   }
 
-  function openCountrySheet() {
+  countryBtn.addEventListener('click', () => {
     csSearch.value = '';
     renderCountryList('');
-    countrySheet.hidden = false;
-    document.body.classList.add('sheet-open');
-    countryBtn.setAttribute('aria-expanded', 'true');
-    // Deliberately not focusing the search box: on a phone that throws the
-    // keyboard up over the list, and most patients just tap one of the twelve
-    // at the top rather than type.
+    openSheet(countrySheet, countryBtn);
+    // البحث لا يُركَّز عليه عمداً: على الهاتف تقفز لوحة المفاتيح فوق القائمة،
+    // ومعظم المرضى ينقرون إحدى الاثنتي عشرة في الأعلى بدل أن يكتبوا.
     const current = csList.querySelector('[aria-current="true"]');
     if (current) current.scrollIntoView({ block: 'center' });
-  }
+  });
 
-  function closeCountrySheet() {
-    countrySheet.hidden = true;
-    document.body.classList.remove('sheet-open');
-    countryBtn.setAttribute('aria-expanded', 'false');
-    countryBtn.focus({ preventScroll: true });
-  }
-
-  countryBtn.addEventListener('click', openCountrySheet);
-  csClose.addEventListener('click', closeCountrySheet);
   csSearch.addEventListener('input', () => renderCountryList(csSearch.value));
 
-  // Enter in the search box takes the first match — the common case is typing
-  // two or three letters and confirming.
+  // Enter في البحث يأخذ أول نتيجة — الحالة الشائعة كتابة حرفين ثم التأكيد.
   csSearch.addEventListener('keydown', event => {
     if (event.key !== 'Enter') return;
     event.preventDefault();
-    const first = csList.querySelector('.cs-item');
+    const first = csList.querySelector('.opt');
     if (first) first.click();
   });
 
-  csList.addEventListener('click', event => {
-    const btn = event.target.closest('.cs-item');
-    if (!btn) return;
-    setCountry(btn.dataset.code);
-    closeCountrySheet();
-  });
-
-  // Tapping the dimmed backdrop closes; taps inside the panel must not.
-  countrySheet.addEventListener('click', event => {
-    if (event.target === countrySheet) closeCountrySheet();
-  });
-
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !countrySheet.hidden) closeCountrySheet();
-  });
-
-  // Below the COUNTRIES/COMMON/DEFAULT_CODE declarations on purpose: they are
-  // `const`, so touching them any earlier hits the temporal dead zone, and the
-  // throw would take the rest of this script — the department fetch and every
-  // event listener — down with it.
+  // بعد إعلان COUNTRIES وما يشتقّ منها عمداً: كلها const، فأي لمسة أبكر تقع في
+  // المنطقة الميتة الزمنية، والاستثناء يسقط بقيّة السكربت معه.
   setCountry(DEFAULT_CODE);
-  loadDepartments();
 
-  /* ---------- الأقسام من قاعدة البيانات ---------- */
+  /* =========================================================
+     الأقسام من قاعدة البيانات
+     ========================================================= */
+
+  let departments = [];
+
+  function setDepartment(id, name) {
+    departmentValue.value = id == null ? '' : String(id);
+    departmentText.textContent = name || 'اختر القسم';
+    departmentText.classList.toggle('ph', !name);
+    clearError('departmentId');
+  }
+
+  function renderDeptList(query) {
+    const q = normalizeAr(String(query || '').toLowerCase());
+    deptList.textContent = '';
+
+    const matches = q
+      ? departments.filter(d => normalizeAr(d.name.toLowerCase()).includes(q))
+      : departments;
+
+    if (!matches.length) {
+      deptList.appendChild(listEmpty(departments.length ? 'لا توجد نتائج' : 'لا توجد أقسام متاحة'));
+      return;
+    }
+
+    for (const dept of matches) {
+      deptList.appendChild(optionRow(dept.name, null, String(dept.id) === departmentValue.value, () => {
+        setDepartment(dept.id, dept.name);
+        closeSheet();
+      }));
+    }
+  }
+
+  departmentBtn.addEventListener('click', () => {
+    // زر المنتقي هو أيضاً زر إعادة المحاولة بعد فشل التحميل.
+    if (!departments.length) { loadDepartments(); return; }
+    // مربّع البحث يظهر حين تستحقّ القائمة بحثاً فقط.
+    deptSearchWrap.hidden = departments.length <= 8;
+    deptSearch.value = '';
+    renderDeptList('');
+    openSheet(deptSheet, departmentBtn);
+  });
+
+  deptSearch.addEventListener('input', () => renderDeptList(deptSearch.value));
+  deptSearch.addEventListener('keydown', event => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    const first = deptList.querySelector('.opt');
+    if (first) first.click();
+  });
+
   async function loadDepartments() {
-    departmentSelect.disabled = true;
+    departmentBtn.disabled = true;
+    departmentText.textContent = 'جارٍ تحميل الأقسام…';
+    departmentText.classList.add('ph');
     try {
       const res = await fetch(API.departments, { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -852,21 +1415,25 @@ body.sheet-open{overflow:hidden}
       const payload = await res.json();
       const items = Array.isArray(payload) ? payload : (payload.data || []);
 
-      for (const dept of items) {
-        const opt = document.createElement('option');
-        opt.value = dept.id;
-        opt.textContent = dept.name || dept.nameAr;
-        departmentSelect.appendChild(opt);
-      }
-      departmentSelect.disabled = false;
+      departments = items.map(dept => ({ id: dept.id, name: dept.name || dept.nameAr || '' }));
+      departmentBtn.disabled = false;
+      setDepartment(null, null);
     } catch (err) {
       console.error('تعذّر تحميل الأقسام', err);
-      departmentSelect.disabled = false;
-      showFormError('تعذّر تحميل قائمة الأقسام. حدّث الصفحة وحاول مرة أخرى.');
+      departments = [];
+      departmentBtn.disabled = false;
+      departmentText.textContent = 'تعذّر التحميل — اضغط لإعادة المحاولة';
+      departmentText.classList.add('ph');
+      showFormError('تعذّر تحميل قائمة الأقسام. تأكّد من الاتصال ثم اضغط على حقل القسم لإعادة المحاولة.');
     }
   }
 
-  /* ---------- تحويل الأرقام العربية وتنظيف الهاتف ---------- */
+  loadDepartments();
+
+  /* =========================================================
+     تحويل الأرقام العربية وتنظيف الهاتف
+     ========================================================= */
+
   const arabicDigits = /[٠-٩۰-۹]/g;
   function toLatinDigits(value) {
     return value.replace(arabicDigits, ch => {
@@ -879,13 +1446,23 @@ body.sheet-open{overflow:hidden}
   phoneInput.addEventListener('input', () => {
     const cleaned = toLatinDigits(phoneInput.value).replace(/[^\d\s-]/g, '');
     if (cleaned !== phoneInput.value) phoneInput.value = cleaned;
-    clearFieldError(phoneInput);
+    clearError('phoneNumber');
   });
 
   /* ---------- عدّاد التفاصيل ---------- */
   detailsInput.addEventListener('input', () => {
     detailsCount.textContent = detailsInput.value.length;
-    clearFieldError(detailsInput);
+    clearError('details');
+  });
+
+  /* ---------- Enter ينتقل للحقل التالي بدل أن يرسل ---------- */
+  form.querySelectorAll('input[type="text"],input[type="tel"]').forEach((input, index, all) => {
+    input.addEventListener('keydown', event => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      const next = all[index + 1];
+      if (next) next.focus(); else input.blur();
+    });
   });
 
   /* ---------- الشكوى تتطلّب تفاصيل ---------- */
@@ -896,7 +1473,7 @@ body.sheet-open{overflow:hidden}
       detailsInput.placeholder = isComplaint
         ? 'صف ما حدث بالتفصيل: المكان، الوقت، والأشخاص إن أمكن...'
         : 'اكتب رسالتك هنا بالتفصيل...';
-      clearTypeError();
+      clearError('type');
     });
   });
 
@@ -906,68 +1483,41 @@ body.sheet-open{overflow:hidden}
     return checked ? checked.value : null;
   }
 
-  function clearTypeError() {
-    typeGroup.classList.remove('invalid');
-    const slot = form.querySelector('[data-err-for="type"]');
-    if (slot) slot.textContent = '';
+  /* =========================================================
+     الأخطاء
+     ========================================================= */
+
+  // بعض الحقول صارت أزراراً فوق مدخلات مخفية، فالعنصر الذي يُلوَّن ويُركَّز
+  // عليه ليس دائماً العنصر الذي يحمل القيمة.
+  function controlFor(field) {
+    if (field === 'type') return typeGroup;
+    if (field === 'visitDate') return visitDateBtn;
+    if (field === 'departmentId') return departmentBtn;
+    return $(field);
   }
 
-  /* ---------- مسح الخطأ عند الكتابة ---------- */
-  form.querySelectorAll('.inp').forEach(el => {
-    el.addEventListener('input', () => clearFieldError(el));
-    el.addEventListener('change', () => clearFieldError(el));
-  });
-
-  /* ---------- التحقّق ---------- */
-  function validate() {
-    const errors = {};
-    const value = id => document.getElementById(id).value.trim();
-
-    // Nothing is preselected, so this is a real check now rather than a
-    // formality — the form can genuinely be submitted with no type chosen.
-    if (!selectedType()) errors.type = 'يرجى اختيار نوع الرسالة';
-
-    if (value('firstName').length < 2) errors.firstName = 'الاسم الأول مطلوب (حرفان على الأقل)';
-    if (value('lastName').length < 2) errors.lastName = 'اسم العائلة مطلوب (حرفان على الأقل)';
-
-    const digits = toLatinDigits(value('phoneNumber')).replace(/\D/g, '');
-    if (!digits) errors.phoneNumber = 'رقم الهاتف مطلوب';
-    else if (digits.length < 7 || digits.length > 15) errors.phoneNumber = 'رقم الهاتف غير صحيح';
-
-    if (!value('visitDate')) {
-      errors.visitDate = 'التاريخ مطلوب';
-    } else if (value('visitDate') > visitDate.max) {
-      errors.visitDate = 'التاريخ لا يمكن أن يكون في المستقبل';
-    } else if (value('visitDate') < visitDate.min) {
-      errors.visitDate = 'التاريخ قديم جداً (أكثر من سنتين)';
+  function clearError(field) {
+    const control = controlFor(field);
+    if (control) {
+      control.classList.remove('invalid');
+      control.removeAttribute('aria-invalid');
     }
-
-    if (!value('departmentId')) errors.departmentId = 'يرجى اختيار القسم';
-
-    if (selectedType() === 'Complaint' && !value('details')) errors.details = 'يرجى كتابة تفاصيل الشكوى';
-
-    return errors;
+    const slot = form.querySelector('[data-err-for="' + field + '"]');
+    if (slot) slot.textContent = '';
   }
 
   function showFieldErrors(errors) {
     let firstInvalid = null;
     for (const [field, message] of Object.entries(errors)) {
-      const slot = form.querySelector(`[data-err-for="${field}"]`);
+      const slot = form.querySelector('[data-err-for="' + field + '"]');
       if (slot) slot.textContent = message;
 
-      // "type" is a radio group, not a single input, so it colours the whole
-      // card row and focuses the first radio instead of an .inp.
-      if (field === 'type') {
-        typeGroup.classList.add('invalid');
-        if (!firstInvalid) firstInvalid = typeGroup.querySelector('input[name="type"]');
-        continue;
-      }
-
-      const input = document.getElementById(field);
-      if (input) {
-        input.classList.add('invalid');
-        input.setAttribute('aria-invalid', 'true');
-        if (!firstInvalid) firstInvalid = input;
+      const control = controlFor(field);
+      if (!control) continue;
+      control.classList.add('invalid');
+      if (field !== 'type') control.setAttribute('aria-invalid', 'true');
+      if (!firstInvalid) {
+        firstInvalid = field === 'type' ? typeGroup.querySelector('input[name="type"]') : control;
       }
     }
     if (firstInvalid) {
@@ -976,16 +1526,9 @@ body.sheet-open{overflow:hidden}
     }
   }
 
-  function clearFieldError(el) {
-    el.classList.remove('invalid');
-    el.removeAttribute('aria-invalid');
-    const slot = form.querySelector(`[data-err-for="${el.id}"]`);
-    if (slot) slot.textContent = '';
-  }
-
   function clearAllErrors() {
-    form.querySelectorAll('.inp').forEach(clearFieldError);
-    clearTypeError();
+    ['type', 'firstName', 'lastName', 'phoneNumber', 'visitDate', 'departmentId', 'details']
+      .forEach(clearError);
     formError.hidden = true;
     formError.textContent = '';
   }
@@ -996,7 +1539,48 @@ body.sheet-open{overflow:hidden}
     formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  /* ---------- الإرسال ---------- */
+  form.querySelectorAll('.inp').forEach(el => {
+    if (!el.id) return;
+    el.addEventListener('input', () => clearError(el.id));
+    el.addEventListener('change', () => clearError(el.id));
+  });
+
+  /* =========================================================
+     التحقّق
+     ========================================================= */
+
+  function validate() {
+    const errors = {};
+    const value = id => ($(id).value || '').trim();
+
+    // لا شيء مختار مسبقاً، فهذا فحص حقيقي لا شكلي.
+    if (!selectedType()) errors.type = 'يرجى اختيار نوع الرسالة';
+
+    if (value('firstName').length < 2) errors.firstName = 'الاسم الأول مطلوب (حرفان على الأقل)';
+    if (value('lastName').length < 2) errors.lastName = 'اسم العائلة مطلوب (حرفان على الأقل)';
+
+    const digits = toLatinDigits(value('phoneNumber')).replace(/\D/g, '');
+    if (!digits) errors.phoneNumber = 'رقم الهاتف مطلوب';
+    else if (digits.length < 7 || digits.length > 15) errors.phoneNumber = 'رقم الهاتف غير صحيح';
+
+    // المنتقي لا يسمح أصلاً بتاريخ خارج المدى، لكن الفحص يبقى: القيمة تُقرأ من
+    // مدخل مخفي، والمدى يُحسب مرّة واحدة عند التحميل — وقد تُترك الصفحة مفتوحة
+    // إلى ما بعد منتصف الليل.
+    if (!value('visitDate')) errors.visitDate = 'التاريخ مطلوب';
+    else if (value('visitDate') > MAX_ISO) errors.visitDate = 'التاريخ لا يمكن أن يكون في المستقبل';
+    else if (value('visitDate') < MIN_ISO) errors.visitDate = 'التاريخ قديم جداً (أكثر من سنتين)';
+
+    if (!value('departmentId')) errors.departmentId = 'يرجى اختيار القسم';
+
+    if (selectedType() === 'Complaint' && !value('details')) errors.details = 'يرجى كتابة تفاصيل الشكوى';
+
+    return errors;
+  }
+
+  /* =========================================================
+     الإرسال
+     ========================================================= */
+
   form.addEventListener('submit', async event => {
     event.preventDefault();
     clearAllErrors();
@@ -1009,12 +1593,12 @@ body.sheet-open{overflow:hidden}
 
     const payload = {
       type: selectedType(),
-      firstName: document.getElementById('firstName').value.trim(),
-      lastName: document.getElementById('lastName').value.trim(),
+      firstName: $('firstName').value.trim(),
+      lastName: $('lastName').value.trim(),
       phoneCountryCode: countryValue.value,
       phoneNumber: toLatinDigits(phoneInput.value).replace(/\D/g, ''),
       visitDate: visitDate.value,
-      departmentId: Number(departmentSelect.value),
+      departmentId: Number(departmentValue.value),
       details: detailsInput.value.trim() || null
     };
 
@@ -1066,32 +1650,40 @@ body.sheet-open{overflow:hidden}
     submitBtn.querySelector('.label').textContent = isLoading ? 'جارٍ الإرسال...' : 'إرسال الرسالة';
   }
 
-  /* ---------- شاشة النجاح ---------- */
+  /* =========================================================
+     شاشة النجاح
+     ========================================================= */
+
   function showSuccess(reference) {
-    document.getElementById('refNumber').textContent = reference;
+    $('refNumber').textContent = reference;
     form.hidden = true;
     successView.hidden = false;
-    successView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // الزرّان يعيشان في شريط الإجراء خارج النموذج، فيُبدَّلان يدوياً.
+    submitBtn.hidden = true;
+    againBtn.hidden = false;
+    scroller.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  document.getElementById('againBtn').addEventListener('click', () => {
+  againBtn.addEventListener('click', () => {
     form.reset();
     clearAllErrors();
     detailsCount.textContent = '0';
     detailsStar.hidden = true;
     detailsInput.placeholder = 'اكتب رسالتك هنا بالتفصيل...';
-    visitDate.value = iso(new Date());
-    // form.reset() cannot restore this one: the picker lives outside the form
-    // and its value is held in a hidden input, so put Jordan back explicitly.
+    // form.reset() لا يستعيد هذه الثلاثة: قيمها في مدخلات مخفية يقودها منتقٍ.
+    setVisitDate(iso(TODAY));
+    setDepartment(null, null);
     setCountry(DEFAULT_CODE);
     successView.hidden = true;
     form.hidden = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    submitBtn.hidden = false;
+    againBtn.hidden = true;
+    scroller.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  document.getElementById('copyRef').addEventListener('click', async event => {
+  $('copyRef').addEventListener('click', async event => {
     const button = event.currentTarget;
-    const reference = document.getElementById('refNumber').textContent;
+    const reference = $('refNumber').textContent;
     try {
       await navigator.clipboard.writeText(reference);
       button.textContent = 'تم النسخ ✓';

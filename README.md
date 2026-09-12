@@ -11,17 +11,43 @@ diverged deliberately:
 - **Cairo throughout.** The original set IBM Plex Sans Arabic as the body face
   and used Cairo only for headings and buttons; Cairo is now the whole page and
   IBM Plex is no longer loaded.
-- **The country code is a searchable picker**, ~198 countries with Arabic names,
-  the twelve most likely repeated in a group at the top. It was a read-only
-  `+962` box. Tapping it opens a bottom sheet (a centred dialog above 640px)
-  with a search field that matches either an Arabic name — normalising أ/إ/آ,
-  ة/ه and ى/ي so spelling variants still hit — or the dial code's digits. It is
-  deliberately not a `<select>`: ~200 options is a blind spinning wheel on iOS
-  and an unsearchable wall on Android. The submitted `phoneCountryCode` follows
-  the selection, and is held in a hidden input.
+- **It is an app shell, not a scrolling document.** `<body>` is
+  `position:fixed` and never scrolls; the header is pinned at the top, the
+  submit button sits in a bar pinned at the bottom, and only the form between
+  them scrolls. The shell's height is `--app-h`, which JavaScript keeps equal
+  to `visualViewport.height` — so when the keyboard opens the form shrinks
+  instead of the focused field disappearing behind it, and the iOS address bar
+  can never collapse mid-scroll and shift the layout.
+- **Zoom is off.** `user-scalable=no` covers Android; Safari has ignored it
+  since iOS 10, so the script also swallows `gesturestart`/`gesturechange`,
+  two-finger `touchmove`, double-tap, `Ctrl`+wheel and `Ctrl`+`+`/`-`/`0`.
+  Every text control is at least 16px for the same reason — Safari
+  auto-zooms on focusing anything smaller, and closing the keyboard does not
+  undo it. This is a deliberate accessibility trade-off: patients who rely on
+  browser zoom cannot use it here.
+- **Every native picker is now a bottom sheet** (a centred dialog above 640px),
+  all three sharing one `.sh` component with a drag-to-close handle, a scrim,
+  focus trapping and `Escape`:
+  - *Country code* — ~198 countries with Arabic names, the twelve most likely
+    repeated in a group at the top. Search matches either an Arabic name —
+    normalising أ/إ/آ, ة/ه and ى/ي so spelling variants still hit — or the dial
+    code's digits.
+  - *Department* — was a `<select>`. Search appears once there are more than
+    eight. If the fetch fails the button becomes the retry control.
+  - *Visit date* — was `<input type="date">`, whose look, format and RTL
+    behaviour differ on every device. It is now an Arabic calendar grid with
+    اليوم/أمس/قبل يومين shortcuts and month/year selects, and days outside the
+    two-year window are simply not selectable.
+
+  None of these is a `<select>` on purpose: a long option list is a blind
+  spinning wheel on iOS and an unsearchable wall on Android. Each keeps its
+  submitted value in a hidden input, which is why `form.reset()` cannot restore
+  them and the reset handler sets all three by hand.
 - **No message type is preselected**, and one must be chosen. The original
   defaulted to *شكر وتقدير*, which meant a patient who never touched that row
   silently filed a thank-you.
+- **Dates are formatted locally, not through `toISOString()`.** UTC formatting
+  returned *yesterday* for any visit logged before 03:00 Amman time.
 - The API wiring differs throughout, because the original was same-origin with
   its backend and this page is not.
 
@@ -100,6 +126,13 @@ origin, so serve it over HTTP to exercise the form:
 npx serve .
 ```
 
-Without a reachable API the page shows
-`تعذّر تحميل قائمة الأقسام` in the error banner — that is the expected offline
-behaviour, not a bug in the page.
+Without a reachable API the page shows `تعذّر تحميل قائمة الأقسام` in the error
+banner and the department field reads `تعذّر التحميل — اضغط لإعادة المحاولة` —
+that is the expected offline behaviour, not a bug in the page.
+
+Chrome cannot be resized narrower than the display, so to check the phone
+layout properly, point an iframe at it rather than trusting the desktop view:
+
+```html
+<iframe src="/index.html" width="390" height="780"></iframe>
+```
