@@ -73,7 +73,7 @@ diverged deliberately:
 block in `index.html`:
 
 ```js
-const API_BASE = 'https://alamalhosp-001-site6.itempurl.com';
+const API_BASE = 'https://businessapi.alamalhospitaljo.com';
 ```
 
 It is hardcoded rather than configured, and that is deliberate: this is a static
